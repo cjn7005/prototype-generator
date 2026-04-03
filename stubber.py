@@ -191,7 +191,6 @@ def make_deletes_api(module: str, attrs: list[Dict[str,str]]) -> list[str]:
 
 def test_gets(module: str, attrs: list[Dict[str,str]]) -> list[str]:
   pk = list(attrs[0].keys())[0]
-  pk_type = list(attrs[0].values())[0][0]
 
   return \
    f"def test_get_one_{module[:-1]}(one_{module[:-1]}):\n"\
@@ -202,22 +201,42 @@ def test_gets(module: str, attrs: list[Dict[str,str]]) -> list[str]:
    f"\tassert result == one_{module[:-1]}\n\n",
 
 def test_creates(module: str, attrs: list[Dict[str,str]]) -> list[str]:
-  return \
+  result = \
    f"def test_create_{module}():\n"\
-   f"\tresult = db.create_{module}()\n"\
-    "\tassert 1+1 == 2\n\n",
+   f"\tnew_{module[:-1]} = "\
+    "{\n"
+  for attr in attrs:
+    attr_name = list(attr.keys())[0] 
+    attr_lst = list(attr.values())[0]
+    if len(attr_lst) < 4: continue
+    result += (f"\t\t\"{attr_name}\": {repr(attr_lst[3])}\n")
+  result += \
+    "\t}\n\n"\
+   f"\tresult = db.create_{module}(new_{module[:-1]})\n\n"\
+   f"\texpected = {module.capitalize()[:-1]}(exec_get_one(\"SELECT * FROM {module}\"))\n\n"\
+   f"\tassert expected == result\n\n"
+  
+  return result,
 
 def test_updates(module: str, attrs: list[Dict[str,str]]) -> list[str]:
+  pk = list(attrs[0].keys())[0]
+
   return \
-   f"def test_update_{module}():\n"\
-   f"\tresult = db.update_{module}()\n"\
-    "\tassert 1+1 == 2\n\n",
+   f"def test_update_{module}(one_{module[:-1]}):\n"\
+    "\t# Can\'t actually test update without prompting a second sample value (eh, it\'s good enough)\n"\
+   f"\texpected = {module.capitalize()[:-1]}(exec_get_one(\"SELECT * FROM {module}\"))\n\n"\
+   f"\tdb.update_{module}(one_{module[:-1]}.{pk}, one_{module[:-1]}.__dict__)\n"\
+   f"\tresult = {module.capitalize()[:-1]}(exec_get_one(\"SELECT * FROM {module}\"))\n\n"\
+    "\tassert expected == result\n\n",
 
 def test_deletes(module: str, attrs: list[Dict[str,str]]) -> list[str]:
+  pk = list(attrs[0].keys())[0]
+
   return \
-   f"def test_delete_{module}():\n"\
-   f"\tresult = db.delete_{module}()\n"\
-    "\tassert 1+1 == 2\n\n",
+   f"def test_delete_{module}(one_{module[:-1]}):\n"\
+   f"\tdb.delete_{module}(one_{module[:-1]}.{pk})\n"\
+   f"\tresult, = exec_get_one(\"SELECT COUNT(*) FROM {module}\")\n"\
+    "\tassert result == 0\n\n",
 
 #endregion
 
@@ -302,6 +321,7 @@ def main():
 
   gen = ((direct, subdir, module) for direct in dirs for subdir in subdirs for module in modules)
   for (direct, subdir, module) in gen:
+    attrs = modules[module]
     with open(f"{direct}/{subdir}/{"test_" if subdir == "tests" else ""}{module}{"_api" if subdir == "tests" and direct == "api" else ""}.py", "w") as f:
 
       #region Database
