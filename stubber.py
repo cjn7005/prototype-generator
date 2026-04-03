@@ -3,6 +3,7 @@ import os
 from typing import Dict
 
 from database.src.db_utils import initialize_db
+from dbdiagram import translate
 
 #region Headers
 # imports, globals, etc.
@@ -348,6 +349,9 @@ def main():
       for i,attr in enumerate(attrs):
         f.write(f"\t{list(attr.keys())[0]} {list(attr.values())[0][1]} {list(attr.values())[0][2]} {"PRIMARY KEY" if i == 0 else ""}{"," if i < len(attrs)-1 else ""}\n")
       f.write(");\n")
+
+  with open("database/schema/schema.txt","w") as f:
+    f.write(translate())
 
   #endregion
 
