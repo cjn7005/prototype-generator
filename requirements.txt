@@ -3,5 +3,4 @@ pydantic
 psycopg2-binary
 pyaml
 pytest
-coverage
 requests
