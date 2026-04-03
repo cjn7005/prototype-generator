@@ -21,11 +21,16 @@ headers = {
 
   "database" : lambda module: (
     "from database.src.db_utils import *\n"\
-   f"from database.src.models import {module.capitalize()}\n\n"
+   f"from database.src.models import {module.capitalize()[:-1]}\n\n"
   ),
 
   "database/tests" : lambda module: (
     f"import database.src.{module} as db\n\n"
+  ),
+
+  "database/tests/conftest" : lambda module: (
+    "import pytest\n"\
+    f"from database.src import db_utils\n\n"
   ),
 
   "server" : lambda module: (
@@ -40,27 +45,27 @@ headers = {
 
 def make_gets(module: str, attrs: list[Dict[str,str]]) -> list[str]:
   all = \
-   f"def get_all_{module}() -> list[{module.capitalize()}]:\n"\
+   f"def get_all_{module}() -> list[{module.capitalize()[:-1]}]:\n"\
    f"\tsql = \"SELECT * FROM {module};\"\n\n"\
     "\tresult = exec_get_all(sql)\n\n"\
-   f"\treturn [{module.capitalize()}(row) for row in result]\n\n"
+   f"\treturn [{module.capitalize()[:-1]}(row) for row in result]\n\n"
   
   queried = \
-   f"def get_{module}(kwargs) -> list[{module.capitalize()}]:\n"\
+   f"def get_{module}(kwargs) -> list[{module.capitalize()[:-1]}]:\n"\
    f"\tif not kwargs: return get_all_{module}()\n"\
    f"\tsql = \"SELECT * FROM {module} WHERE\\n\"\n"\
    f"\tfor i,key in enumerate(kwargs):\n"\
     "\t\tsql += f\"\\t{key} = %({key})s\"\n"\
     "\t\tsql += \",\\n\" if i < len(kwargs)-1 else \"\\n\"\n\n"\
     "\tresult = exec_get_all(sql,kwargs)\n\n"\
-   f"\treturn [{module.capitalize()}(row) for row in result]\n\n"
+   f"\treturn [{module.capitalize()[:-1]}(row) for row in result]\n\n"
 
   return all, queried
   
 
 def make_creates(module: str, attrs: list[Dict[str,str]]) -> list[str]:
   create = \
-   f"def create_{module}(kwargs) -> {module.capitalize()}:\n"\
+   f"def create_{module}(kwargs) -> {module.capitalize()[:-1]}:\n"\
    f"\tsql = \"INSERT INTO {module} (\"\n"\
     "\tvalues = \"VALUES(\"\n"\
     "\tfor i,key in enumerate(kwargs):\n"\
@@ -70,8 +75,8 @@ def make_creates(module: str, attrs: list[Dict[str,str]]) -> list[str]:
     "\t\tvalues += \", \" if i < len(kwargs)-1 else \")\"\n\n"\
    f"\tsql += values\n"\
    f"\tsql += \"\\nRETURNING *\"\n\n"\
-    "\tresult = exec_commit_returning(sql,kwargs)\n\n"\
-   f"\treturn {module.capitalize()}(result)\n\n"
+    "\tresult = exec_commit_returning(sql,kwargs)[0]\n\n"\
+   f"\treturn {module.capitalize()[:-1]}(result)\n\n"
   
   return create,
 
@@ -82,6 +87,8 @@ def make_updates(module: str, attrs: list[Dict[str,str]]) -> list[str]:
   
   update = \
    f"def update_{module}({pk}: {pk_type}, kwargs) -> None:\n"\
+    "\tkwargs = dict(kwargs)\n"\
+    "\tif len(kwargs) == 0: return\n"\
    f"\tsql = \"UPDATE {module} SET \\n\"\n"\
     "\tfor i,key in enumerate(kwargs):\n"\
     "\t\tsql += f\"{key} = %({key})s\"\n"\
@@ -125,7 +132,7 @@ def make_gets_api(module: str, attrs: list[Dict[str,str]]) -> list[str]:
     "\t\treturn jsonify([row.__dict__ for row in result]), 200\n"\
     "\telse:\n"\
     "\t\treturn jsonify({\"error\": f\""\
-   f"{module.capitalize()[:-1]}"\
+   f"{module.capitalize()[:-1][:-1]}"\
     " {"\
    f"{pk}"\
     "} "\
@@ -134,7 +141,7 @@ def make_gets_api(module: str, attrs: list[Dict[str,str]]) -> list[str]:
   queried = \
    f"@{module}_bp.route('/', methods=[\"GET\"])\n"\
    f"def get_{module}_from_query():\n"\
-   f"\tresult = db.get_{module}(kwargs=dict(request.args))\n"\
+   f"\tresult = db.get_{module}(request.args)\n"\
     "\tif result is not None:\n"\
     "\t\treturn jsonify([row.__dict__ for row in result]), 200\n"\
     "\telse:\n"\
@@ -160,8 +167,8 @@ def make_puts_api(module: str, attrs: list[Dict[str,str]]) -> list[str]:
   put = \
    f"@{module}_bp.route('/<{pk}>', methods=[\"PUT\"])\n"\
    f"def put_{module}({pk}: {pk_type}):\n"\
-   f"\tresult = db.update_{module}({pk}, request.args)\n"\
-    "\treturn jsonify(result.__dict__), 200\n\n"
+   f"\tresult = db.update_{module}({pk}, dict(request.args))\n"\
+    "\treturn jsonify(""), 204\n\n"
   
   return put,
 
@@ -183,10 +190,16 @@ def make_deletes_api(module: str, attrs: list[Dict[str,str]]) -> list[str]:
 #region DB Tests
 
 def test_gets(module: str, attrs: list[Dict[str,str]]) -> list[str]:
+  pk = list(attrs[0].keys())[0]
+  pk_type = list(attrs[0].values())[0][0]
+
   return \
-   f"def test_get_{module}():\n"\
-   f"\tresult = db.get_{module}()\n"\
-    "\tassert 1+1 == 2\n\n",
+   f"def test_get_one_{module[:-1]}(one_{module[:-1]}):\n"\
+   f"\tresult = db.get_{module}("\
+    "{"\
+   f"\"{pk}\": one_{module[:-1]}.{pk}"\
+    "})[0]\n"\
+   f"\tassert result == one_{module[:-1]}\n\n",
 
 def test_creates(module: str, attrs: list[Dict[str,str]]) -> list[str]:
   return \
@@ -261,13 +274,18 @@ def main():
 
   with open("database/src/models.py","w") as f:
     for module, attrs in modules.items():
-      f.write(f"class {module.capitalize()}:\n")
+      f.write(f"class {module.capitalize()[:-1]}:\n")
       for attr in attrs:
         f.write(f"\t{list(attr.keys())[0]}: {list(attr.values())[0][0]}\n")
       f.write("\n\tdef __init__(self, args):\n")
       for i,attr in enumerate(attrs):
         f.write(f"\t\tself.{list(attr.keys())[0]} = args[{i}]\n")
-      f.write("\n\n")
+      f.write("\n\tdef __eq__(self,other):\n"\
+             f"\t\tif type(other) != {module.capitalize()[:-1]}: return False\n"
+              "\t\treturn (\n")
+      for i,attr in enumerate(attrs):
+        f.write(f"\t\t\tself.{list(attr.keys())[0]} == other.{list(attr.keys())[0]}{" and" if i < len(attrs)-1 else ""}\n")
+      f.write("\t\t)\n\n")
 
   #endregion
 
@@ -277,7 +295,7 @@ def main():
     with open(f"database/schema/{module}.sql", "w") as f:
       f.write(f"CREATE TABLE IF NOT EXISTS {module} (\n")
       for i,attr in enumerate(attrs):
-        f.write(f"\t{list(attr.keys())[0]} {list(attr.values())[0][1]} {list(attr.values())[0][2] if len(list(attr.values())[0]) > 2 else ""} {"PRIMARY KEY" if i == 0 else ""}{"," if i < len(attrs)-1 else ""}\n")
+        f.write(f"\t{list(attr.keys())[0]} {list(attr.values())[0][1]} {list(attr.values())[0][2]} {"PRIMARY KEY" if i == 0 else ""}{"," if i < len(attrs)-1 else ""}\n")
       f.write(");\n")
 
   #endregion
@@ -324,6 +342,55 @@ def main():
               f.write(function)
 
       #endregion
+
+  #region DB Conftest
+
+  with open("database/tests/conftest.py","w") as f:
+    f.write(headers["database/tests/conftest"](module))
+    # Reset database function
+    f.write(
+      "@pytest.fixture(scope=\"function\", autouse=True)\n"\
+      "def reset_database():\n"\
+      "\tsql = \"DROP TABLE IF EXISTS "
+    )
+    for i,module in enumerate(modules):
+      f.write(
+        f"{module}{", " if i < len(modules)-1 else " CASCADE;\"\n"}"
+      )
+    f.write("\tdb_utils.exec_commit(sql)\n")
+    for i,module in enumerate(modules):
+      f.write(
+        f"\tdb_utils.exec_sql_file(\"schema/{module}.sql\")\n"
+      )
+    
+    f.write("\n\n")
+
+    for i, (module, attrs) in enumerate(modules.items()):
+      f.write(
+       f"from database.src.{module} import create_{module}\n\n"\
+        "@pytest.fixture(scope=\"function\")\n"\
+       f"def one_{module[:-1]}():\n"\
+       f"\tnew_{module} = "\
+        "{\n"
+      )
+      for attr in attrs:
+        attr_name = list(attr.keys())[0] 
+        attr_lst = list(attr.values())[0]
+        if len(attr_lst) < 4: continue
+        f.write(f"\t\t\"{attr_name}\": {repr(attr_lst[3])}\n")
+      f.write(
+        "\t}\n\n"\
+       f"\treturn create_{module}(new_{module})\n\n"
+      )
+
+
+  #endregion
+
+  #region API Conftest
+
+
+
+  #endregion
   
   #region Server
 

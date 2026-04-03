@@ -1,10 +1,10 @@
 {
     "users" : [
       {"id": ["str", "UUID", "DEFAULT gen_random_uuid()"]},
-      {"username": ["str", "VARCHAR(40)", "NOT NULL"]}
+      {"username": ["str", "VARCHAR(40)", "NOT NULL", "John Doe"]}
     ],
     "sessions" : [
         {"id": ["str", "UUID", "DEFAULT gen_random_uuid()"]},
-        {"session_key": ["str", "UUID"]}
+        {"session_key": ["str", "UUID", "", "a26e9eba-3668-4b79-86c0-27bf11cd28bd"]}
     ]
 }
