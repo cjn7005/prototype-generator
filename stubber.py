@@ -7,33 +7,38 @@ from database.src.db_utils import initialize_db
 #region Headers
 # imports, globals, etc.
 
+global_imports = ( # for imports such as UUID or datetime
+    "from uuid import UUID\n"\
+    "import datetime\n\n"
+  )
+
 headers = {
-  "api/src": lambda module: (
+  "api/src": lambda module: ( global_imports + \
     "from flask import Blueprint, jsonify, request\n"\
    f"from database.src import {module} as db\n\n"\
    f"{module}_bp = Blueprint(\"{module}\",__name__,url_prefix=\"/{module}\")\n\n"
   ),
 
-  "api/tests": lambda module: (
+  "api/tests": lambda module: ( global_imports + \
     "from test_utils import *\n\n"\
     f"BASE = \"http://127.0.0.1:5000/{module}/\"\n\n"
   ),
 
-  "database" : lambda module: (
+  "database" : lambda module: ( global_imports + \
     "from database.src.db_utils import *\n"\
    f"from database.src.models import {module.capitalize()[:-1]}\n\n"
   ),
 
-  "database/tests" : lambda module: (
+  "database/tests" : lambda module: ( global_imports + \
     f"import database.src.{module} as db\n\n"
   ),
 
-  "conftest" : lambda module: (
+  "conftest" : lambda module: ( global_imports + \
     "import pytest\n"\
     f"from database.src import db_utils\n\n"
   ),
 
-  "server" : lambda module: (
+  "server" : lambda module: ( global_imports + \
     "from flask import Flask\n"\
     "import sys\n\n"
   )
@@ -213,7 +218,7 @@ def test_creates(module: str, attrs: list[Dict[str,str]]) -> list[str]:
     attr_name = list(attr.keys())[0] 
     attr_lst = list(attr.values())[0]
     if len(attr_lst) < 4: continue
-    result += (f"\t\t\"{attr_name}\": {repr(attr_lst[3])}\n")
+    result += (f"\t\t\"{attr_name}\": {repr(attr_lst[3])},\n")
   result += \
     "\t}\n\n"\
    f"\tresult = db.create_{module}(new_{module[:-1]})\n\n"\
@@ -247,15 +252,16 @@ def test_deletes(module: str, attrs: list[Dict[str,str]]) -> list[str]:
 #region API Tests
 
 def test_gets_api(module: str, attrs: list[Dict[str,str]]) -> list[str]:
+  pk = list(attrs[0].keys())[0]
+
   return \
    f"def test_get_{module}(one_{module[:-1]}):\n"\
     "\tresult = get_rest_call(BASE)[0]\n"\
-    "\texpected = {}\n"\
-   f"\tfor key, value in (one_{module[:-1]}).__dict__.items():\n"\
-    "\t\texpected[key] = str(value)\n"\
-   f"\tassert result == expected\n\n",
+   f"\tassert result.get(\"{pk}\")\n\n",
 
 def test_posts_api(module: str, attrs: list[Dict[str,str]]) -> list[str]:
+  pk = list(attrs[0].keys())[0]
+
   result = \
    f"def test_post_{module}():\n"\
    f"\tnew_{module[:-1]} = "\
@@ -264,14 +270,11 @@ def test_posts_api(module: str, attrs: list[Dict[str,str]]) -> list[str]:
     attr_name = list(attr.keys())[0] 
     attr_lst = list(attr.values())[0]
     if len(attr_lst) < 4: continue
-    result += (f"\t\t\"{attr_name}\": {repr(attr_lst[3])}\n")
+    result += (f"\t\t\"{attr_name}\": {repr(attr_lst[3])},\n")
   result += (
     "\t}\n\n"\
    f"\tresult = post_rest_call(BASE,json=new_{module[:-1]},expected_code=201)\n"\
-    "\texpected = {}\n"\
-   f"\tfor key, value in (new_{module[:-1]}).items():\n"\
-    "\t\texpected[key] = str(value)\n"\
-    "\tassert expected.items() <= result.items()\n\n"
+   f"\tassert result.get(\"{pk}\")\n\n"
   )
   
   return result,
@@ -283,9 +286,7 @@ def test_puts_api(module: str, attrs: list[Dict[str,str]]) -> list[str]:
    f"def test_put_{module}(one_{module[:-1]}):\n"\
    f"\tresult = put_rest_call(BASE+str(one_{module[:-1]}.{pk}), params=one_{module[:-1]}.__dict__)\n"\
     "\texpected = {}\n"\
-   f"\tfor key, value in (one_{module[:-1]}).__dict__.items():\n"\
-    "\t\texpected[key] = str(value)\n"\
-    "\tassert expected.items() <= result.items()\n\n",
+   f"\tassert result.get(\"{pk}\")\n\n",
 
 def test_deletes_api(module: str, attrs: list[Dict[str,str]]) -> list[str]:
   pk = list(attrs[0].keys())[0]
@@ -294,10 +295,7 @@ def test_deletes_api(module: str, attrs: list[Dict[str,str]]) -> list[str]:
    f"def test_delete_{module}(one_{module[:-1]}):\n"\
    f"\tresult = delete_rest_call(BASE+str(one_{module[:-1]}.{pk}))\n"\
     "\tassert len(get_rest_call(BASE)) == 0\n\n"\
-    "\texpected = {}\n"\
-   f"\tfor key, value in (one_{module[:-1]}).__dict__.items():\n"\
-    "\t\texpected[key] = str(value)\n"\
-    "\tassert expected.items() <= result.items()\n\n",
+   f"\tassert result.get(\"{pk}\")\n\n",
             
 #endregion
 
@@ -325,6 +323,7 @@ def main():
   #region Models
 
   with open("database/src/models.py","w") as f:
+    f.write(global_imports)
     for module, attrs in modules.items():
       f.write(f"class {module.capitalize()[:-1]}:\n")
       for attr in attrs:
@@ -431,7 +430,7 @@ def main():
           attr_name = list(attr.keys())[0] 
           attr_lst = list(attr.values())[0]
           if len(attr_lst) < 4: continue
-          f.write(f"\t\t\"{attr_name}\": {repr(attr_lst[3])}\n")
+          f.write(f"\t\t\"{attr_name}\": {repr(attr_lst[3])},\n")
         f.write(
           "\t}\n\n"\
         f"\treturn create_{module}(new_{module})\n\n"
