@@ -16,45 +16,55 @@ Later when you are defining your attributes' python_types, if you are using impo
 
 ## Usage
 
-To generate the code, first you must define your backend schema. To do this, you will enter in your desired models into `models.json`. Each "model" (or "module," I flip back and forth between the terms) will be a table in your Postgres database, and each attribute a column. There are 3-4 things you must define for each attribute.
+To generate the code, first you must define your backend schema. To do this, you will enter in your desired models into `models.json`. Each "model" (or "module," I flip back and forth between the terms) will be a table in your Postgres database, and each attribute a column. 
+
+### Model Definitions
+
+1. `module_name`: The name of the module as it will appear in the database (the table name). Presumed to be plural.
+
+2. `pk` or `primary key`: The name of the primary key attribute. The referenced attribute **must** be defined in `attributes`.
+
+3. `singular`, optional: The singular of `module_name`. If omitted, the parser will assume a trailing "s" in `module_name` (i.e. "modules" -> "module" and "categories" -> "categorie").
+
+4. `object_name`, optional: The name of the model as it will appear in Python. The stubber will create Python classes for each model, and this is the name of that class. If omitted, will take on the capitalized version of the singular.
+
+### Attribute Definitions
 
 1. `python_type`: The attribute type as it will appear in Python type hints (e.g. str, int, datetime, etc.). Imported types should be definied in `stubber.py` (see [Setup](#setup)).
+
 2. `sql_type`: The attribute type as it will appear in PostgreSQL (e.g. INT, UUID, TIMESTAMP, etc.). 
-3. `column_parameters`: Any additional parameters to define in the sql table (e.g. `DEFAULT: 'John Doe'`). **Note:** Do not define `PRIMARY KEY` here, that is automatically generated from the first attribute. If you define foreign keys (i.e. `REFERENCES`), then be sure that the table it references comes earlier in `models.json`.
-4. `sample_value`: An example value, used for testing. This is optional **unless** the attribute is required (i.e. `NOT NULL`).
+
+3. `column_parameters`: Any additional parameters to define in the sql table (e.g. `DEFAULT: 'John Doe'`). **Note:** Do not define `PRIMARY KEY` here, that is automatically generated from the given attribute. If you define foreign keys (i.e. `REFERENCES`), then be sure that the table it references comes earlier in `models.json`.
+
+4. `sample_value`, optional: An example value, used for testing. This is optional **unless** the attribute is required (i.e. `NOT NULL`).
 
 ```json
 {
-    "module": [
-        {"primary_key": [
-            "python_type",
-            "sql_type",
-            "column_parameters",
-            "[sample value]"
-        ]},
-        {"attr1": [
-            "python_type",
-            "sql_type",
-            "column_parameters",
-            "[sample value]"
-        ]},
-        {"attr2": ["..."]}
-    ],
-    "//" : "For example:",
-    "//" : "(Make the module plural)",
-    "users": [ 
-        {"id": [
-            "UUID",
-            "UUID",
-            "DEFAULT gen_random_uuid()"
-        ]},
-        {"username": [
-            "str",
-            "VARCHAR(40)",
-            "",
-            "John Doe"
-        ]}
-    ]
+    "module_name": {
+        "singular": "module",
+        "object_name": "Module",
+        "pk": "module_id",
+        "attributes": {
+            "module_id": {
+                "python_type": "UUID",
+                "sql_type": "UUID",
+                "column_arguments": "DEFAULT gen_random_uuid()"
+            },
+            "module_attr1": {
+                "python_type": "str",
+                "sql_type": "TEXT",
+                "column_arguments": "NOT NULL",
+                "sample": "abc"
+            },
+            "module_attr2": {
+                "python_type": "int",
+                "sql_type": "INTEGER",
+                "column_arguments": "DEFAULT 123"
+            },
+            "module_attr3" : "..."
+        }
+    },
+    "module2": "..."
 }
 ```
 
@@ -90,7 +100,7 @@ The stubber will also generate the text file `database/schema/schema.txt`. This 
 
 ## Teardown
 
-If you wish to remove your generated files, simply run the clearer:
+If you wish to remove your generated files, simply run the clearer. *This is mainly used for development and debugging purposes. If you have no intention of deleting everything at the press of a button then feel free to delete this file.*
 
 > [!WARNING]
 > This will **DELETE EVERY FILE** in the src and test directories (except for .ignoremes and utils) as well as **DROP ALL THE TABLES IN THE DATABASE**. Be **VERY** certain you do not have any valuable files in these directories before running the clearer.
