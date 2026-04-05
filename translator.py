@@ -39,6 +39,8 @@ def translate_sql(files):
     for file in files:
         with open(file,"r") as f:
             while line := f.readline():
+                if re.findall(";",line):
+                    current_table = None
                 if table_name := re.match(
                         r"CREATE TABLE(?: IF NOT EXISTS)? (?P<table_name>\w+)",
                         line, re.IGNORECASE
@@ -49,7 +51,7 @@ def translate_sql(files):
                         "object_name": re.sub( # Pascalize
                             r"([a-zA-Z])_([a-z])",
                             lambda x: x.group(1) + x.group(2).capitalize(),
-                            re.sub(r"^([a-z])",lambda x: x.group().capitalize(), module)
+                            re.sub(r"^([a-z])",lambda x: x.group().capitalize(), module)[:-1]
                         )
                     }
                     current_table = table_name.group("table_name")

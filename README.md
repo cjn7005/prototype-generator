@@ -4,11 +4,20 @@ This is a tool for getting started creating a backend for a web application. It 
 
 ## Setup
 
-This tool requires Python 3 and Postgres. To install the necessary Python packages run:
+### Requirements 
+
+* [![postgresql](https://img.shields.io/badge/postgresql-4169e1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+
+* [![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+
+
+This tool requires Python 3 and PostgreSQL. To install the necessary Python packages run:
 
 ```zsh
 pip install -r requirements.txt
 ```
+
+### Config
 
 Next you must set up your database. First, create a file in `database/config` named `db.yml` (you can copy from `git_db.yml`). Then create a database and user (login enabled) using pgAdmin, and enter the names and passwords into your `db.yml`.
 
@@ -17,7 +26,7 @@ Later when you are defining your attributes' python_types, if you are using impo
 
 ## Usage
 
-To generate the code, first you must define your backend schema. To do this, you will enter in your desired models into `models.json`. Each "model" (or "module," I flip back and forth between the terms) will be a table in your Postgres database, and each attribute a column. 
+To generate the code, first you must define your backend schema. To do this, you will enter in your desired models into `models.json`. Each "model" (or "module," I flip back and forth between the terms) will be a table in your PostgreSQL database, and each attribute a column. 
 
 ### Model Definitions
 
@@ -38,7 +47,7 @@ To generate the code, first you must define your backend schema. To do this, you
 
 3. `column_parameters`: Any additional parameters to define in the sql table (e.g. `DEFAULT: 'John Doe'`). **Note:** Do not define `PRIMARY KEY` here, that is automatically generated from the given attribute. If you define foreign keys (i.e. `REFERENCES`), then be sure that the table it references comes earlier in `models.json`.
 
-4. `sample_value`, optional: An example value, used for testing. This is optional **unless** the attribute is required (i.e. `NOT NULL`).
+4. `sample_value`, optional: An example value, used for testing. This is optional **unless** the attribute is required (i.e. `NOT NULL` with no `DEFAULT`).
 
 ```json
 {
@@ -109,7 +118,7 @@ The translator (`translator.py`) can "translate" between SQL, [dbdiagram.io](htt
 python translator.py {dir} {sql or diagram} > {out}
 ```
 
-To generate a .json file from your schema, enter the location of your .sql file(s) with `dir` and choose `sql`. The script will print to stout, so define your output file with `out`.
+To generate a .json file from your schema, enter the location of your .sql file(s) with `dir` and choose `sql`. The script will print to stout, so define your output file with `out`. It is important to note that the translator assumes each table and column delcaration is on a single line, since it reads the file line by line. So ensure that your .sql files are formatted appropriately.
 
 To generate [dbdiagram.io](https://dbdiagram.io/)-friendly SQL, simply do the same as above but choose `diagram`.
 
