@@ -1,9 +1,12 @@
+import argparse
 import json
 import os
+import re
 from typing import Any, Dict
+from psycopg2.errors import UndefinedTable
 
 from database.src.db_utils import exec_sql_file, initialize_db
-from dbdiagram import translate
+from translator import translate_diagram
 
 
 #region Headers
@@ -11,7 +14,8 @@ from dbdiagram import translate
 
 global_imports = ( # for imports such as UUID or datetime
     "from uuid import UUID\n"\
-    "import datetime\n\n"
+    "import datetime\n"\
+    "from typing import Any\n\n"
   )
 
 headers = {
@@ -463,7 +467,9 @@ class Stubber:
 
     return \
     f"def test_update_{module}(one_{singular}):\n"\
-      "\t# Can\'t actually test update without prompting a second sample value (eh, it\'s good enough)\n"\
+      "\t# Can\'t actually test update without prompting a second sample value\n"\
+      "\t# May be a future feature but for now just edit these tests manually\n"\
+      "\t# (It still tests that it can be called, so that\'s something)\n"\
     f"\texpected = {Object}(exec_get_one(\"SELECT * FROM {module}\"))\n\n"\
     f"\tdb.update_{module}(one_{singular}.{pk}, one_{singular}.__dict__)\n"\
     f"\tresult = {Object}(exec_get_one(\"SELECT * FROM {module}\"))\n\n"\
@@ -601,10 +607,18 @@ class Stubber:
           )
         f.write(");\n")
 
-      exec_sql_file(f"schema/{module}.sql")
+      try:
+        exec_sql_file(f"schema/{module}.sql")
+      except UndefinedTable as e:
+        class DependencyException(Exception):
+          pass
+        
+        predecessor, = re.findall(r"\"(?P<table>.+)\"", str(e))
+
+        raise DependencyException(f"Foreign key error - table \"{predecessor}\" must come before table \"{module}\" in {self.model_path}")
 
     with open("database/schema/schema.txt","w") as f:
-      f.write(translate())
+      f.write(translate_diagram())
 
     #endregion
 
@@ -732,5 +746,9 @@ class Stubber:
       #endregion
 
 if __name__ == "__main__":
-  stubber = Stubber("models.json")
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--file","-f",default="models.json",help="Input models file")
+  args = parser.parse_args()
+
+  stubber = Stubber(args.file)
   stubber.main()  
