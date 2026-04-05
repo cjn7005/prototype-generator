@@ -108,7 +108,13 @@ class Stubber:
 
 
   def get_Object(self, module: str) -> str:
-    return self.modules[module].get("object_name", self.get_singular(module).capitalize())
+    return self.modules[module].get(
+      "object_name", 
+      re.sub(r"([a-zA-Z])_([a-z])",
+             lambda x: x.group(1) + x.group(2).capitalize(),
+             re.sub(r"^([a-z])",lambda x: x.group().capitalize(), module)
+      )
+    )
 
 
   def get_pk(self, module: str) -> str:
@@ -618,7 +624,9 @@ class Stubber:
         raise DependencyException(f"Foreign key error - table \"{predecessor}\" must come before table \"{module}\" in {self.model_path}")
 
     with open("database/schema/schema.txt","w") as f:
-      f.write(translate_diagram())
+      f.write(translate_diagram(
+        [os.path.join(os.path.dirname(__file__), f"database/schema/{file}") \
+         for file in os.listdir("database/schema/")]))
 
     #endregion
 

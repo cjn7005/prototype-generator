@@ -1,12 +1,8 @@
-"""
-For the purposes of transforming the .sql files into the format used by dbdiagram.io
-"""
-
 import argparse
 import json
 import os
 import re
-import sys
+
 
 def translate_diagram(files: str):
     result = ""
@@ -38,7 +34,6 @@ def translate_diagram(files: str):
 
 def translate_sql(files):
     result = {}
-    
     current_table = None
 
     for file in files:
@@ -48,7 +43,15 @@ def translate_sql(files):
                         r"CREATE TABLE(?: IF NOT EXISTS)? (?P<table_name>\w+)",
                         line, re.IGNORECASE
                     ):
-                    result[table_name.group("table_name")] = {}
+                    module = table_name.group("table_name")
+                    result[module] = {
+                        "singular": module[:-1],
+                        "object_name": re.sub( # Pascalize
+                            r"([a-zA-Z])_([a-z])",
+                            lambda x: x.group(1) + x.group(2).capitalize(),
+                            re.sub(r"^([a-z])",lambda x: x.group().capitalize(), module)
+                        )
+                    }
                     current_table = table_name.group("table_name")
                 
                 elif current_table:
@@ -80,10 +83,7 @@ def translate_sql(files):
                             result[current_table]["attributes"][attr]["sample"] = \
                                 f"[INSERT SAMPLE {col.group("column")} HERE]"  
 
-
     return json.dumps(result)
-
-
 
 
 if __name__ == "__main__":
