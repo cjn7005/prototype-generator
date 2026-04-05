@@ -10,11 +10,22 @@ This is a tool for getting started creating a backend for a web application. It 
 
 * [![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 
+* [![React](https://shields.io)](https://react.dev/)
 
-This tool requires Python 3 and PostgreSQL. To install the necessary Python packages run:
+* [![Node version](https://shields.io)](https://nodejs.org/)
+
+
+This tool requires Python 3, PostgreSQL, Node.js, React.js, and Reactstrap. To install the necessary Python packages run:
 
 ```zsh
 pip install -r requirements.txt
+```
+
+To install the necessary react packages, navigate to `frontend/` and run: 
+
+```zsh
+npx create-react-app .
+npm install reactstrap react react-dom
 ```
 
 ### Config
@@ -108,6 +119,17 @@ python -m flask --app api/server.py run [--debug]
 ```
 
 The stubber will also generate the text file `database/schema/schema.txt`. This is a translated .sql file of all the generated tables that can be copy-pasted into [dbdiagram.io](https://dbdiagram.io/) (my database visualizer of choice).
+
+
+## Frontend
+
+The stubber will also create a (*very*) basic frontend UI to interact with your backend. It is simply one table per model that allows for creating, updating, and deleting your objects. Each table is located at "{home}/{module}". To run the frontend, navigate to `frontend/` and run:
+
+```zsh 
+npm start
+```
+
+This will deploy the application to your local network. Refer to the output of the command to connect to the application.
 
 
 ## Translator
