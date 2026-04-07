@@ -6,13 +6,10 @@ import {
 } from "react-router-dom";
 
 import { Home } from './components/Home.jsx';
-import { Customer, Address, Category, Product, Order, OrderItem, Payment, Shipment, Review, Supplier, ProductSupplier, Cart, CartItem, Discount, OrderDiscount, } from './components/Modules';
+
+import { tables, table_names, components } from './components/Modules.jsx';
 
 function App() {
-	const tables = ["/customers", "/addresses", "/categories", "/products", "/orders", "/order_items", "/payments", "/shipments", "/reviews", "/suppliers", "/product_suppliers", "/carts", "/cart_items", "/discounts", "/order_discounts", ];
-	const table_names = ["Customer", "Address", "Category", "Product", "Order", "OrderItem", "Payment", "Shipment", "Review", "Supplier", "ProductSupplier", "Cart", "CartItem", "Discount", "OrderDiscount", ];
-	const components = [Customer, Address, Category, Product, Order, OrderItem, Payment, Shipment, Review, Supplier, ProductSupplier, Cart, CartItem, Discount, OrderDiscount, ];
-
 	return <>
 		<Router>
 		<Navbar fixed='top' color='light'>
@@ -28,8 +25,8 @@ function App() {
 			</Navbar>
 			<Routes>
 				<Route exact path="/" element={<Home tables={tables} table_names={table_names}/>}/ >
-					{tables.map((x,i) => (<Route path={x} element = {<>{components[i]()}</>} />)
-)}			</Routes>
+					{tables.map((x,i) => (<Route path={x} element = {<>{components[i]()}</>} />))}
+      </Routes>
 		</Router>
 	</>
 }
