@@ -8,8 +8,6 @@ export function MyForm({isActive, onClosed, header, fields, obj, field_names, pk
   const [objPK, setObjPK] = useState(obj ? obj[pk] : null);
 
   useEffect(() => setObjPK(obj ? obj[pk] : null), [obj,pk]);
-  console.log(obj);
-  console.log(objPK);
   useEffect(() => {setIsOpen(isActive)},[isActive]);
   
   function handleChange(e) {
@@ -22,6 +20,14 @@ export function MyForm({isActive, onClosed, header, fields, obj, field_names, pk
   };
 
   async function handleSubmit() {
+    // Clean null values 
+    // THIS COULD POTENTIALLY CAUSE ISSUES WITH DESIRED EMPTY VALUES, DELETE IF NECESSARY
+    for (let kv of Object.entries(formData)) {
+      if (kv[1] === "") {
+        delete formData[kv[0]];
+      }
+    }
+    
     onSubmit(formData, objPK); 
     setIsOpen(false);
   }

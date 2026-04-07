@@ -680,7 +680,7 @@ class Stubber:
         f.write(
           f"export function {self.get_Object(module)}() "+"{\n"\
           "\treturn <MyTable \n"\
-          "\t\ttable_name={"+f"[\"{self.get_Object(module)}\",\"{module.capitalize()}\"]"+"}\n"\
+          "\t\ttable_name={"+f"[\"{self.get_Object(module)}\",\"{module.capitalize().replace("_"," ")}\"]"+"}\n"\
           "\t\turl={"+f"\"{api_host}/{module}/\""+"}\n"\
           "\t\tcolumns={"+f"{[attr for attr in obj["attributes"]]}"+"}\n"\
           "\t\tcolumn_names={"+f"{[
@@ -694,7 +694,7 @@ class Stubber:
         )
       
       # Exports
-      
+
       f.write(
         "export const tables = ["
       )

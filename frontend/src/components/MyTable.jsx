@@ -1,5 +1,5 @@
 import '../App.css';
-import { Button, Modal, ModalFooter, ModalHeader, Table } from 'reactstrap';
+import { Alert, Button, Modal, ModalFooter, ModalHeader, Table } from 'reactstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useEffect, useState } from 'react';
 import { MyForm } from '../components/MyForm';
@@ -11,12 +11,14 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
   const [selectedObject, setSelectedObject] = useState(null);
   const [posting, setPosting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [lastResponse, setLastResponse] = useState(null);
 
 
   async function getData() {
+    let response;
     try {
       setState("loading");
-      let response = await fetch(url, { credentials: "include" });
+      response = await fetch(url, { credentials: "include" });
       let dat = await response.json()
       if (!response.ok) {
         console.error(`Response status: ${response.status}`);
@@ -27,38 +29,63 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
     } catch (error) {
       console.error(error);
     }
+    finally {
+      let ok = response && response.ok;
+      if (!ok) {
+        let msg = ("Failed to get "+table_name[1] + 
+                    (response ? ("\nError: "+response.text) : ""));
+        setLastResponse( { "text": msg, "ok": ok });
+      }
+    }
   }
 
   async function postData(obj) {
+    let response;
     try {      
-      let response = await fetch(url, { credentials: "include", method: "POST", body: JSON.stringify(obj), headers:{"Content-Type":"application/json"}});
+      response = await fetch(url, { credentials: "include", method: "POST", body: JSON.stringify(obj), headers:{"Content-Type":"application/json"}});
       if (!response.ok) {
         console.error(`Response status: ${response.status}`);
       }
       getData();
     } catch (error) {
       console.error(error);
+    }
+    finally {
+      let ok = response && response.ok;
+      let msg = ok ? ("Successfully created "+table_name[0]) : 
+                     ("Failed to create "+table_name[0] + 
+                        (response ? ("\nError: "+response.text) : ""));
+      setLastResponse( { "text": msg, "ok": ok });
     }
   }
 
   async function putData(obj, objPK) {
+    let response;
     try {
-      console.log(objPK);
       let putUrl = url+objPK+"?"+Object.entries(obj).map(
         (kv,i,arr) => kv[0]+"="+kv[1] + (i < arr.length-1 ? "&" : ""));
-      let response = await fetch(putUrl, { credentials: "include", method: "PUT" });
+      response = await fetch(putUrl, { credentials: "include", method: "PUT" });
       if (!response.ok) {
         console.error(`Response status: ${response.status}`);
       }
       getData();
     } catch (error) {
       console.error(error);
+    }
+    finally {
+      console.log(response);
+      let ok = response && response.ok;
+      let msg = ok ? ("Successfully updated "+table_name[0]+" "+selectedObject[pk]) : 
+                     ("Failed to update "+table_name[0]+" "+selectedObject[pk] + 
+                        (response ? ("\nError: "+response.text) : ""));
+      setLastResponse( { "text": msg, "ok": ok });
     }
   }
 
   async function deleteData(obj) {
+    let response;
     try {
-      let response = await fetch(url + obj[pk], { credentials: "include", method: "DELETE"});
+      response = await fetch(url + obj[pk], { credentials: "include", method: "DELETE"});
       if (!response.ok) {
         console.error(`Response status: ${response.status}`);
       }
@@ -66,13 +93,31 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
     } catch (error) {
       console.error(error);
     }
+    finally {
+      let ok = response && response.ok;
+      let msg = ok ? ("Successfully deleted "+table_name[0]+" "+selectedObject[pk]) : 
+                     ("Failed to delete "+table_name[0]+" "+selectedObject[pk] + 
+                        (response ? ("\nError: "+response.text) : ""));
+      setLastResponse( { "text": msg, "ok": ok });
+    }
   }
 
-  useEffect(() => { getData(); });
+  useEffect(() => { getData(); }, []);
 
 
   if (state !== "loading") {
+    console.log(lastResponse);
     return (<>
+      {/* Error */}
+      {lastResponse && <Alert 
+        color={lastResponse.ok ? "success" : "danger"} 
+        isOpen={lastResponse.text !== ""}
+        toggle={() => setLastResponse(null)}
+        >
+        {lastResponse.text}
+      </Alert>}
+
+      {/* Post / Put Modal */}
       <MyForm 
         isActive={(posting || selectedObject) && !deleting} 
         onClosed={() => {setSelectedObject(null); setPosting(false);}} 
