@@ -1,4 +1,4 @@
-import { Modal, ModalBody, ModalHeader, ModalFooter, Button, Form, FormGroup, Input, FormText, Label } from 'reactstrap';
+import { Modal, ModalBody, ModalHeader, ModalFooter, Button, Form, FormGroup, Input, Label } from 'reactstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useEffect, useState } from 'react';
 
@@ -7,7 +7,7 @@ export function MyForm({isActive, onClosed, header, fields, obj, field_names, pk
   const [formData, setFormData] = useState({});
   const [objPK, setObjPK] = useState(obj ? obj[pk] : null);
 
-  useEffect(() => setObjPK(obj ? obj[pk] : null), [obj]);
+  useEffect(() => setObjPK(obj ? obj[pk] : null), [obj,pk]);
   console.log(obj);
   console.log(objPK);
   useEffect(() => {setIsOpen(isActive)},[isActive]);

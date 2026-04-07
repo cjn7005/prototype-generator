@@ -675,36 +675,69 @@ class Stubber:
 
     with open("frontend/src/App.js", "w") as f:
       f.write(
-        "import { Navbar } from 'reactstrap';\n"\
+        "import { DropdownItem, DropdownMenu, DropdownToggle, Nav, Navbar, NavbarBrand, UncontrolledDropdown } from 'reactstrap';\n"\
         "import {\n"\
         "\tBrowserRouter as Router,\n"\
         "\tRoutes,\n"\
         "\tRoute,\n"\
-        "\tNavigate\n"\
         "} from \"react-router-dom\";\n\n"\
+        "import { Home } from './components/Home.jsx';\n"\
         "import { "
       )
       
+      # Imports
       for module in self.modules:
         f.write(self.get_Object(module) + ", ")
       
       f.write(
         "} from \'./components/Modules\';\n\n"\
         "function App() {\n"\
-        "\treturn <>\n"\
-        "\t\t<Router>\n"\
-        "\t\t\t<Navbar />\n"\
-        "\t\t\t<Routes>\n"\
-        "\t\t\t\t<Route exact path=\"/\" element={<h1>It works!</h1>}/ >\n" #element={<Navigate to="/customers" />}
+        "\tconst tables = ["
       )
       
+      # const tables
       for module in self.modules:
-        f.write(f"\t\t\t\t<Route path=\"/{module}\" element="+"{"+f"<{self.get_Object(module)} />"+"} />\n")
+        f.write(f"\"/{module}\", ")
 
       f.write(
+        "];\n"\
+        "\tconst table_names = ["
+      )
+      
+      # const table_names
+      for module in self.modules:
+        f.write(f"\"{self.get_Object(module)}\", ")
+
+      f.write(
+        "];\n"\
+        "\tconst components = ["
+      )
+
+      # const components
+      for module in self.modules:
+        f.write(self.get_Object(module)+", ")
+
+      f.write(
+        "];\n\n"\
+        "\treturn <>\n"\
+        "\t	<Router>\n"\
+        "\t\t<Navbar fixed='top' color='light'>\n"\
+        "\t\t\t<NavbarBrand href=\"/\"><h1>Home</h1></NavbarBrand>\n"\
+        "\t\t\t\t<Nav className=\"me-auto\" navbar>\n"\
+        "\t\t\t\t\t<UncontrolledDropdown nav>\n"\
+        "\t\t\t\t\t\t<DropdownToggle nav caret>Tables</DropdownToggle>\n"\
+        "\t\t\t\t\t\t<DropdownMenu right>\n"\
+        "\t\t\t\t\t\t\t{tables.map((x,i) => (<DropdownItem href={x}>{table_names[i]}</DropdownItem>))}\n"\
+        "\t\t\t\t\t\t</DropdownMenu>\n"\
+        "\t\t\t\t\t</UncontrolledDropdown>\n"\
+        "\t\t\t\t</Nav>\n"\
+        "\t\t\t</Navbar>\n"\
+        "\t\t\t<Routes>\n"\
+        "\t\t\t\t<Route exact path=\"/\" element={<Home tables={tables} table_names={table_names}/>}/ >\n"\
+        "\t\t\t\t\t{tables.map((x,i) => (<Route path={x} element = {<>{components[i]()}</>} />)\n)}"\
         "\t\t\t</Routes>\n"\
-        "\t\t</Router>\n"
-        "\t</>\n"
+        "\t\t</Router>\n"\
+        "\t</>\n"\
         "}\n"
         "\n"
         "export default App;\n"

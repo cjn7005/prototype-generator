@@ -68,7 +68,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
     }
   }
 
-  useEffect(() => { getData(); }, []);
+  useEffect(() => { getData(); });
 
 
   if (state !== "loading") {
@@ -100,14 +100,14 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
         <thead>
           <tr>
             <><th>{column_names[columns.indexOf(pk)]}</th></>
-            {columns.map((k, i) => k == pk ? (<></>) : (<><td>{column_names[i]}</td></>))}
+            {columns.map((k, i) => k === pk ? (<></>) : (<><td>{column_names[i]}</td></>))}
             <td><Button color="success" onClick={() => setPosting(true)}>Create {table_name[0]}</Button></td>
           </tr>
         </thead>
         <tbody>
           {data.map((obj) => (<><tr onClick={() => setSelectedObject(obj)}>
             <><th>{obj[pk]}</th></>
-            {columns.map((k) => k == pk ? ("") : (<><td>{obj[k]}</td></>))}
+            {columns.map((k) => k === pk ? ("") : (<><td>{obj[k]}</td></>))}
             <td>
               <Button onClick={() => {setDeleting(true); setSelectedObject(obj);}} 
                 color="danger">Delete</Button></td>
@@ -116,7 +116,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       </Table>
     </>);
 
-  } else if (state == "loading") {
+  } else if (state === "loading") {
     return <>
       <h1>Loading...</h1>
     </>
