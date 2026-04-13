@@ -186,7 +186,7 @@ class ProtoGen:
 
   #region DB Methods
 
-  def make_gets(self, module: str) -> list[str]:
+  def make_gets(self, module: str) -> tuple[str]:
     singular = self.get_singular(module)
     Object = self.get_Object(module)
 
@@ -227,7 +227,7 @@ class ProtoGen:
     return all, queried
     
 
-  def make_creates(self, module: str) -> list[str]:
+  def make_creates(self, module: str) -> tuple[str]:
     singular = self.get_singular(module)
     Object = self.get_Object(module)
 
@@ -263,7 +263,7 @@ class ProtoGen:
     return create,
 
 
-  def make_updates(self, module: str) -> list[str]:
+  def make_updates(self, module: str) -> tuple[str]:
     pk = self.get_pk(module)
     pk_type = self.get_pk_arguments(module)["python_type"]
     singular = self.get_singular(module)
@@ -301,7 +301,7 @@ class ProtoGen:
     return update,
 
 
-  def make_deletes(self, module: str) -> list[str]:
+  def make_deletes(self, module: str) -> tuple[str]:
     pk = self.get_pk(module)
     pk_type = self.get_pk_arguments(module)["python_type"]
     singular = self.get_singular(module)
@@ -323,7 +323,7 @@ class ProtoGen:
     return delete,
 
 
-  def make_utils(self, module: str) -> list[str]:
+  def make_utils(self, module: str) -> tuple[str]:
     singular = self.get_singular(module)
 
     required = \
@@ -351,7 +351,7 @@ class ProtoGen:
 
   #region API Methods
 
-  def make_gets_api(self, module: str) -> list[str]:
+  def make_gets_api(self, module: str) -> tuple[str]:
     pk = self.get_pk(module)
     pk_type = self.get_pk_arguments(module)["python_type"]
     singular = self.get_singular(module)
@@ -396,7 +396,7 @@ class ProtoGen:
     return from_pk, queried 
 
 
-  def make_posts_api(self, module: str) -> list[str]:
+  def make_posts_api(self, module: str) -> tuple[str]:
     singular = self.get_singular(module)
 
     post = \
@@ -420,7 +420,7 @@ class ProtoGen:
     return post,
 
 
-  def make_puts_api(self, module: str) -> list[str]:
+  def make_puts_api(self, module: str) -> tuple[str]:
     pk = self.get_pk(module)
     pk_type = self.get_pk_arguments(module)["python_type"]
     singular = self.get_singular(module)
@@ -447,7 +447,7 @@ class ProtoGen:
     return put,
 
 
-  def make_deletes_api(self, module: str) -> list[str]:
+  def make_deletes_api(self, module: str) -> tuple[str]:
     pk = self.get_pk(module)
     pk_type = self.get_pk_arguments(module)["python_type"]
     singular = self.get_singular(module)
@@ -466,7 +466,7 @@ class ProtoGen:
     return delete,
 
 
-  def make_utils_api(self, module: str) -> list[str]:
+  def make_utils_api(self, module: str) -> tuple[str]:
     singular = self.get_singular(module)
 
     required = \
@@ -484,31 +484,31 @@ class ProtoGen:
 
   #region DB Tests
 
-  def test_gets(self, module: str) -> list[str]:
+  def test_gets(self, module: str) -> tuple[str]:
     singular = self.get_singular(module)
     pk = self.get_pk(module)
 
     one = \
       f"def test_get_one_{singular}(one_{singular}):\n"\
       f"\tresult = db.get_{module}("+"{"+f"\"{pk}\": one_{singular}.{pk}"+"})[0]\n"\
-      f"\tassert result == one_{singular}\n\n"
+      f"\tassert result == one_{singular}, \"Failed to get one {module}\"\n\n"
 
     all = \
       f"def test_get_all_{module}(one_{singular}):\n"\
       f"\tresult = db.get_all_{module}()[0]\n"\
-      f"\tassert result == one_{singular}\n\n"
+      f"\tassert result == one_{singular}, \"Failed to get all {module}\"\n\n"
     
     return one, all
 
 
-  def test_creates(self, module: str) -> list[str]:
+  def test_creates(self, module: str) -> tuple[str]:
     singular = self.get_singular(module)
     Object = self.get_Object(module)
     parameters, _ = self.get_dependencies(module)
 
     result = \
-    f"def test_create_{module}({parameters}):\n"\
-    f"\tnew_{singular} = "\
+      f"def test_create_{module}({parameters}):\n"\
+      f"\tnew_{singular} = "\
       "{\n"
     
     result += self.build_sample(module)
@@ -517,52 +517,72 @@ class ProtoGen:
       "\t}\n\n"\
     f"\tresult = db.create_{module}(new_{singular})\n\n"\
     f"\texpected = {Object}(exec_get_one(\"SELECT * FROM {module}\"))\n\n"\
-    f"\tassert expected == result\n\n"
+    f"\tassert expected == result, \"Failed to create {singular}\"\n\n"
     
     return result,
 
 
-  def test_updates(self, module: str) -> list[str]:
+  def test_updates(self, module: str) -> tuple[str]:
     singular = self.get_singular(module)
     Object = self.get_Object(module)
     pk = self.get_pk(module)
 
     return \
-    f"def test_update_{module}(one_{singular}):\n"\
+     f"def test_update_{module}(one_{singular}):\n"\
       "\t# Can\'t actually test update without prompting a second sample value\n"\
       "\t# May be a future feature but for now just edit these tests manually\n"\
       "\t# (It still tests that it can be called, so that\'s something)\n"\
-    f"\texpected = {Object}(exec_get_one(\"SELECT * FROM {module}\"))\n\n"\
-    f"\tdb.update_{module}(one_{singular}.{pk}, one_{singular}.__dict__)\n"\
-    f"\tresult = {Object}(exec_get_one(\"SELECT * FROM {module}\"))\n\n"\
-      "\tassert expected == result\n\n",
+     f"\texpected = {Object}(exec_get_one(\"SELECT * FROM {module}\"))\n\n"\
+     f"\tdb.update_{module}(one_{singular}.{pk}, one_{singular}.__dict__)\n"\
+     f"\tresult = {Object}(exec_get_one(\"SELECT * FROM {module}\"))\n\n"\
+     f"\tassert expected == result, \"Failed to update {singular}\"\n\n",
 
 
-  def test_deletes(self, module: str) -> list[str]:
+  def test_deletes(self, module: str) -> tuple[str]:
     singular = self.get_singular(module)
     pk = self.get_pk(module)
 
     return \
-    f"def test_delete_{module}(one_{singular}):\n"\
-    f"\tdb.delete_{module}(one_{singular}.{pk})\n"\
-    f"\tresult, = exec_get_one(\"SELECT COUNT(*) FROM {module}\")\n"\
-      "\tassert result == 0\n\n",
+      f"def test_delete_{module}(one_{singular}):\n"\
+      f"\tdb.delete_{module}(one_{singular}.{pk})\n"\
+      f"\tresult, = exec_get_one(\"SELECT COUNT(*) FROM {module}\")\n"\
+      f"\tassert result == 0, \"Failed to delete {singular}\"\n\n",
+
+
+  def test_utils(self, module: str) -> tuple[str]:
+    singular = self.get_singular(module)
+    
+    required = \
+      f"def test_get_{singular}_required_fields():\n"\
+      f"\t# Lightweight test to check the output of `get_{singular}_required_fields`\n"\
+      f"\tresult = db.get_{singular}_required_fields()\n"\
+      f"\tassert type(result) == list, \"Failed to list required fields\"\n\n"
+    
+    return required
+
 
   #endregion
 
   #region API Tests
 
-  def test_gets_api(self, module: str) -> list[str]:
+  def test_gets_api(self, module: str) -> tuple[str]:
     singular = self.get_singular(module)
     pk = self.get_pk(module)
 
-    return \
-    f"def test_get_{module}(one_{singular}):\n"\
+    test_get_all = \
+     f"def test_get_{module}(one_{singular}):\n"\
       "\tresult = get_rest_call(BASE)[0]\n"\
-    f"\tassert result.get(\"{pk}\")\n\n",
+     f"\tassert result.get(\"{pk}\"), \"Failed to get all {module}\"\n\n"
+
+    test_get_one = \
+     f"def test_get_one_{singular}(one_{singular}):\n"\
+      "\tresult = get_rest_call(f\"{BASE}/{one_"+f"{singular}.{pk}"+"}\")[0]\n"\
+     f"\tassert result.get(\"{pk}\"), \"Failed to get one {singular}\"\n\n"
+
+    return test_get_all, test_get_one
 
 
-  def test_posts_api(self, module: str) -> list[str]:
+  def test_posts_api(self, module: str) -> tuple[str]:
     singular = self.get_singular(module)
     pk = self.get_pk(module)
     parameters, _ = self.get_dependencies(module)
@@ -577,13 +597,13 @@ class ProtoGen:
     result += (
       "\t}\n\n"\
     f"\tresult = post_rest_call(BASE,json=new_{singular},expected_code=201)\n"\
-    f"\tassert result.get(\"{pk}\")\n\n"
+    f"\tassert result.get(\"{pk}\"), \"Failed to post {singular}\"\n\n"
     )
     
     return result,
 
 
-  def test_puts_api(self, module: str) -> list[str]:
+  def test_puts_api(self, module: str) -> tuple[str]:
     singular = self.get_singular(module)
     pk = self.get_pk(module)
 
@@ -591,9 +611,9 @@ class ProtoGen:
     f"def test_put_{module}(one_{singular}):\n"\
     f"\tresult = put_rest_call(BASE+str(one_{singular}.{pk}), params=one_{singular}.__dict__)\n"\
       "\texpected = {}\n"\
-    f"\tassert result.get(\"{pk}\")\n\n",
+    f"\tassert result.get(\"{pk}\"), \"Failed to put {singular}\"\n\n",
 
-  def test_deletes_api(self, module: str) -> list[str]:
+  def test_deletes_api(self, module: str) -> tuple[str]:
     singular = self.get_singular(module)
     pk = self.get_pk(module)
 
@@ -601,7 +621,19 @@ class ProtoGen:
     f"def test_delete_{module}(one_{singular}):\n"\
     f"\tresult = delete_rest_call(BASE+str(one_{singular}.{pk}))\n"\
       "\tassert len(get_rest_call(BASE)) == 0\n\n"\
-    f"\tassert result.get(\"{pk}\")\n\n",
+    f"\tassert result.get(\"{pk}\"), \"Failed to delete {singular}\"\n\n",
+
+
+  def test_utils_api(self, module: str) -> tuple[str]:
+    singular = self.get_singular(module)
+    
+    required = \
+     f"def test_get_{singular}_required_fields():\n"\
+     f"\t# Lightweight test to check the output of `get_{singular}_required_fields_api`\n"\
+     f"\tresult = get_rest_call(BASE+\"admin/required\")\n"\
+      "\tassert type(result) == list, \"Failed to list required fields\"\n\n"
+    
+    return required
      
   #endregion
 
@@ -706,7 +738,7 @@ class ProtoGen:
                         "Update Methods","Delete Methods","Utility Methods"]),
 
             "tests": zip([self.test_gets,self.test_creates,
-                          self.test_updates,self.test_deletes,self.make_utils],
+                          self.test_updates,self.test_deletes,self.test_utils],
                         ["Get Methods","Create Methods",
                           "Update Methods","Delete Methods","Utility Methods"])
           },
@@ -717,7 +749,7 @@ class ProtoGen:
                         "Update Methods","Delete Methods","Utility Methods"]),
 
             "tests": zip([self.test_gets_api,self.test_posts_api,
-                          self.test_puts_api,self.test_deletes_api,self.make_utils_api],
+                          self.test_puts_api,self.test_deletes_api,self.test_utils_api],
                         ["Get Methods","Post Methods",
                           "Put Methods","Delete Methods","Utility Methods"])
           }

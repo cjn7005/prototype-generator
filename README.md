@@ -165,3 +165,4 @@ The created application is not meant to be robust by any means. This is merely a
 ### Planned Improvements
 
 - Improved error handling for APIs
+- More versatile tests (e.g. multiple creates, gets, etc.)
