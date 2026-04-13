@@ -1,5 +1,5 @@
 host: localhost
-database: db-name
-user: db-user
-password: password
+database: postgres
+user: postgres
+password: postgres
 port: 5432
