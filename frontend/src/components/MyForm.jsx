@@ -2,7 +2,7 @@ import { Modal, ModalBody, ModalHeader, ModalFooter, Button, Form, FormGroup, In
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useEffect, useState } from 'react';
 
-export function MyForm({isActive, onClosed, header, fields, obj, field_names, pk, onSubmit}) {
+export function MyForm({isActive, onClosed, header, fields, obj, field_names, pk, onSubmit, required}) {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({});
   const [objPK, setObjPK] = useState(obj ? obj[pk] : null);
@@ -43,8 +43,10 @@ export function MyForm({isActive, onClosed, header, fields, obj, field_names, pk
       <ModalBody>
         {fields.map((k,i) => (<>
           <FormGroup>
-            <Label for={k}>{field_names[i]}</Label>
-            <Input name={k} defaultValue={obj ? obj[k] : ""} onChange={(e) => handleChange(e)}/>
+            <Label aria-required={required && (required.includes(k))} for={k}>
+              {field_names[i]}{(required && (required.includes(k))) ? <span class="text-danger"> *</span> : ""}
+            </Label>
+            <Input required={required && (required.includes(k))} name={k} defaultValue={obj ? obj[k] : ""} onChange={(e) => handleChange(e)}/>
           </FormGroup>
         </>))}
       </ModalBody>

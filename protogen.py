@@ -5,7 +5,7 @@ import re
 from typing import Any, Dict
 from psycopg2.errors import UndefinedTable
 
-from database.src.db_utils import exec_sql_file, initialize_db
+from database.src.db_utils import exec_sql_file
 from translator import translate_diagram
 
 # Flask api default

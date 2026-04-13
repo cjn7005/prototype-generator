@@ -12,7 +12,31 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
   const [posting, setPosting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [lastResponse, setLastResponse] = useState(null);
+  const [requiredFields, setRequiredFields] = useState(null);
 
+
+  async function getRequiredFields() {
+    let response;
+    try {
+      response = await fetch(url+"/admin/required", { credentials: "include" });
+      let dat = await response.json()
+      if (!response.ok) {
+        console.error(`Response status: ${response.status}`);
+      }
+      
+      setRequiredFields(dat);
+    } catch (error) {
+      console.error(error);
+    }
+    finally {
+      let ok = response && response.ok;
+      if (!ok) {
+        let msg = ("Failed to get "+table_name[1] + 
+                    (response ? ("\nError: "+(await response.text())) : ""));
+        setLastResponse( { "text": msg, "ok": ok });
+      }
+    }
+  }
 
   async function getData() {
     let response;
@@ -37,6 +61,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
         setLastResponse( { "text": msg, "ok": ok });
       }
     }
+    getRequiredFields();
   }
 
   async function postData(obj) {
@@ -129,6 +154,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
         field_names={column_names}
         pk={pk}
         onSubmit={(obj, objPK) => {(posting ? postData(obj) : putData(obj, objPK)); setPosting(false); setDeleting(false); setSelectedObject(null);}}
+        required={requiredFields}
         />
 
       {/* Delete Modal */}
