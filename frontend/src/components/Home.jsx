@@ -5,11 +5,10 @@ export function Home({ tables, table_names }) {
     <Card>
       <ListGroup>
         {table_names.map((x,i) => (
-        <>
-          <ListGroupItem>
+          <ListGroupItem key={"listGroupItem"+i}>
             <NavLink href={tables[i]}>{x}</NavLink>
           </ListGroupItem>
-        </>))}
+        ))}
       </ListGroup>
     </Card>
   </>

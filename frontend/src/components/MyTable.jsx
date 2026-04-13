@@ -97,7 +97,6 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       console.error(error);
     }
     finally {
-      console.log(response);
       let ok = response && response.ok;
       let msg = ok ? ("Successfully updated "+table_name[0]+" "+selectedObject[pk]) : 
                      ("Failed to update "+table_name[0]+" "+selectedObject[pk] + 
@@ -132,7 +131,6 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
 
 
   if (state !== "loading") {
-    console.log(lastResponse);
     return (<>
       {/* Error */}
       {lastResponse && <Alert 
@@ -171,19 +169,23 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       <Table hover striped>
         <thead>
           <tr>
-            <><th>{column_names[columns.indexOf(pk)]}</th></>
-            {columns.map((k, i) => k === pk ? (<></>) : (<><td>{column_names[i]}</td></>))}
-            <td><Button color="success" onClick={() => setPosting(true)}>Create {table_name[0]}</Button></td>
+            <th>{column_names[columns.indexOf(pk)]}</th>
+              {columns.map((k, i) => k === pk ? ("") : (
+                <td key={"td"+i}>{column_names[i]}</td>))
+              }
+              <td><Button color="success" onClick={() => setPosting(true)}>Create {table_name[0]}</Button></td>
           </tr>
         </thead>
         <tbody>
-          {data.map((obj) => (<><tr onClick={() => setSelectedObject(obj)}>
-            <><th>{obj[pk]}</th></>
-            {columns.map((k) => k === pk ? ("") : (<><td>{obj[k]}</td></>))}
-            <td>
-              <Button onClick={() => {setDeleting(true); setSelectedObject(obj);}} 
-                color="danger">Delete</Button></td>
-          </tr></>))}
+          {data.map((obj) => (
+            <tr key={"td"+obj[pk]} onClick={() => setSelectedObject(obj)}>
+              <th>{obj[pk]}</th>
+              {columns.map((k, i) => k === pk ? ("") : (<td key={"td"+i}>{obj[k]}</td>))}
+              <td>
+                <Button onClick={() => {setDeleting(true); setSelectedObject(obj);}} 
+                  color="danger">Delete</Button>
+              </td>
+            </tr>))}
         </tbody>
       </Table>
     </>);

@@ -70,10 +70,12 @@ def pretty_name(string):
 
 #region Custom input
 
+# [ADD HERE]
 # File body generator
 # def my_custom_file(modules):
 #   yield "Hello world!\n"
 
+# [ADD HERE]
 # File path: write mode (e.g. "w" or "a+"), file body (iterable callable)
 custom = {
   # "out/myfile.txt" : {
@@ -120,10 +122,12 @@ class ProtoGen:
   # }
 
   def get_singular(self, module: str) -> str:
+    """Returns the singular name of the module"""
     return self.modules[module].get("singular", module[:-1])
 
 
   def get_Object(self, module: str) -> str:
+    """Returns the PascalCase name of the module"""
     return self.modules[module].get(
       "object_name", 
       re.sub(r"([a-zA-Z])_([a-z])",
@@ -134,6 +138,7 @@ class ProtoGen:
 
 
   def get_pk(self, module: str) -> str:
+    """Returns the primary key of the module"""
     result = self.modules[module].get("pk") or self.modules[module].get("primary key")
     if not result:
       raise Exception(f"Primary key [\"pk\" or \"primary key\"] not defined for module {module}")
@@ -141,11 +146,13 @@ class ProtoGen:
 
 
   def get_pk_arguments(self, module: str) -> Dict[str,str]:
+    """Returns the column arguments of the primary key"""
     pk = self.get_pk(module)
     return self.modules[module]["attributes"][pk]
 
 
   def write_methods(self, module: str, method: callable, label: str) -> None:
+    """Returns the written out methods wrapped in a `region` tag with `label`"""
     result = (f"#region {label}\n\n")
     for function in method(module):
       result += (function)
@@ -153,7 +160,11 @@ class ProtoGen:
     return result
 
 
-  def get_dependencies(self, module: str) -> Dict[str,str]:
+  def get_dependencies(self, module: str) -> tuple[str,Dict[str,str]]:
+    """
+    Returns the dependencies as a string for test method parameters 
+    as well as a dict mapping from a column name to a table name
+    """
     dependencies = {}
     parameters = ""
     first = True
@@ -169,6 +180,7 @@ class ProtoGen:
 
 
   def build_sample(self, module: str) -> str:
+    """Builds (the interior of) a dict that uses the sample data provided from modules"""
     _, dependencies = self.get_dependencies(module)
     result = ""
     for attr, obj in self.modules[module]["attributes"].items():
@@ -187,6 +199,11 @@ class ProtoGen:
   #region DB Methods
 
   def make_gets(self, module: str) -> tuple[str]:
+    """
+    Make the getter database methods
+
+    [ADD HERE]
+    """
     singular = self.get_singular(module)
     Object = self.get_Object(module)
 
@@ -228,6 +245,11 @@ class ProtoGen:
     
 
   def make_creates(self, module: str) -> tuple[str]:
+    """
+    Make the create database methods
+
+    [ADD HERE]
+    """
     singular = self.get_singular(module)
     Object = self.get_Object(module)
 
@@ -264,6 +286,11 @@ class ProtoGen:
 
 
   def make_updates(self, module: str) -> tuple[str]:
+    """
+    Make the update database methods
+
+    [ADD HERE]
+    """
     pk = self.get_pk(module)
     pk_type = self.get_pk_arguments(module)["python_type"]
     singular = self.get_singular(module)
@@ -302,6 +329,11 @@ class ProtoGen:
 
 
   def make_deletes(self, module: str) -> tuple[str]:
+    """
+    Make the delete database methods
+
+    [ADD HERE]
+    """
     pk = self.get_pk(module)
     pk_type = self.get_pk_arguments(module)["python_type"]
     singular = self.get_singular(module)
@@ -324,6 +356,11 @@ class ProtoGen:
 
 
   def make_utils(self, module: str) -> tuple[str]:
+    """
+    Make the database utility methods
+
+    [ADD HERE]
+    """
     singular = self.get_singular(module)
 
     required = \
@@ -352,6 +389,11 @@ class ProtoGen:
   #region API Methods
 
   def make_gets_api(self, module: str) -> tuple[str]:
+    """
+    Make the getter api methods
+
+    [ADD HERE]
+    """
     pk = self.get_pk(module)
     pk_type = self.get_pk_arguments(module)["python_type"]
     singular = self.get_singular(module)
@@ -397,6 +439,11 @@ class ProtoGen:
 
 
   def make_posts_api(self, module: str) -> tuple[str]:
+    """
+    Make the post api methods
+
+    [ADD HERE]
+    """
     singular = self.get_singular(module)
 
     post = \
@@ -421,6 +468,11 @@ class ProtoGen:
 
 
   def make_puts_api(self, module: str) -> tuple[str]:
+    """
+    Make the put api methods
+
+    [ADD HERE]
+    """
     pk = self.get_pk(module)
     pk_type = self.get_pk_arguments(module)["python_type"]
     singular = self.get_singular(module)
@@ -448,6 +500,11 @@ class ProtoGen:
 
 
   def make_deletes_api(self, module: str) -> tuple[str]:
+    """
+    Make the delete api methods
+
+    [ADD HERE]
+    """
     pk = self.get_pk(module)
     pk_type = self.get_pk_arguments(module)["python_type"]
     singular = self.get_singular(module)
@@ -467,6 +524,11 @@ class ProtoGen:
 
 
   def make_utils_api(self, module: str) -> tuple[str]:
+    """
+    Make the api utility methods
+
+    [ADD HERE]
+    """
     singular = self.get_singular(module)
 
     required = \
@@ -485,6 +547,11 @@ class ProtoGen:
   #region DB Tests
 
   def test_gets(self, module: str) -> tuple[str]:
+    """
+    Make the database test get methods
+
+    [ADD HERE]
+    """
     singular = self.get_singular(module)
     pk = self.get_pk(module)
 
@@ -502,6 +569,11 @@ class ProtoGen:
 
 
   def test_creates(self, module: str) -> tuple[str]:
+    """
+    Make the database test create methods
+
+    [ADD HERE]
+    """
     singular = self.get_singular(module)
     Object = self.get_Object(module)
     parameters, _ = self.get_dependencies(module)
@@ -523,6 +595,11 @@ class ProtoGen:
 
 
   def test_updates(self, module: str) -> tuple[str]:
+    """
+    Make the database test update methods
+
+    [ADD HERE]
+    """
     singular = self.get_singular(module)
     Object = self.get_Object(module)
     pk = self.get_pk(module)
@@ -539,6 +616,11 @@ class ProtoGen:
 
 
   def test_deletes(self, module: str) -> tuple[str]:
+    """
+    Make the database test delete methods
+
+    [ADD HERE]
+    """
     singular = self.get_singular(module)
     pk = self.get_pk(module)
 
@@ -550,6 +632,11 @@ class ProtoGen:
 
 
   def test_utils(self, module: str) -> tuple[str]:
+    """
+    Make the database test utility methods
+
+    [ADD HERE]
+    """
     singular = self.get_singular(module)
     
     required = \
@@ -566,6 +653,11 @@ class ProtoGen:
   #region API Tests
 
   def test_gets_api(self, module: str) -> tuple[str]:
+    """
+    Make the api test get methods
+
+    [ADD HERE]
+    """
     singular = self.get_singular(module)
     pk = self.get_pk(module)
 
@@ -583,6 +675,11 @@ class ProtoGen:
 
 
   def test_posts_api(self, module: str) -> tuple[str]:
+    """
+    Make the api test post methods
+
+    [ADD HERE]
+    """
     singular = self.get_singular(module)
     pk = self.get_pk(module)
     parameters, _ = self.get_dependencies(module)
@@ -604,6 +701,11 @@ class ProtoGen:
 
 
   def test_puts_api(self, module: str) -> tuple[str]:
+    """
+    Make the api test put methods
+
+    [ADD HERE]
+    """
     singular = self.get_singular(module)
     pk = self.get_pk(module)
 
@@ -614,6 +716,11 @@ class ProtoGen:
     f"\tassert result.get(\"{pk}\"), \"Failed to put {singular}\"\n\n",
 
   def test_deletes_api(self, module: str) -> tuple[str]:
+    """
+    Make the api test delete methods
+
+    [ADD HERE]
+    """
     singular = self.get_singular(module)
     pk = self.get_pk(module)
 
@@ -625,6 +732,11 @@ class ProtoGen:
 
 
   def test_utils_api(self, module: str) -> tuple[str]:
+    """
+    Make the api test utility methods
+
+    [ADD HERE]
+    """
     singular = self.get_singular(module)
     
     required = \
@@ -769,7 +881,7 @@ class ProtoGen:
         f.write(
           f"export function {self.get_Object(module)}() "+"{\n"\
           "\treturn <MyTable \n"\
-          "\t\ttable_name={"+f"[\"{self.get_Object(module)}\",\"{module.capitalize().replace("_"," ")}\"]"+"}\n"\
+          "\t\ttable_name={"+f"[\"{pretty_name(self.get_singular(module))}\",\"{pretty_name(module)}\"]"+"}\n"\
           "\t\turl={"+f"\"{api_host}/{module}/\""+"}\n"\
           "\t\tcolumns={"+f"{[attr for attr in obj["attributes"]]}"+"}\n"\
           "\t\tcolumn_names={"+f"{
@@ -797,7 +909,7 @@ class ProtoGen:
       
       # const table_names
       for module in self.modules:
-        f.write(f"\"{self.get_Object(module)}\", ")
+        f.write(f"\"{pretty_name(module)}\", ")
 
       f.write(
         "];\n"\
@@ -838,6 +950,7 @@ class ProtoGen:
 
       for i, module in enumerate(self.modules):
         singular = self.get_singular(module)
+        # Proper dependency ordering is a precondition, so there should be no need for it here
         parameters, dependencies = self.get_dependencies(module)
 
         f.write(

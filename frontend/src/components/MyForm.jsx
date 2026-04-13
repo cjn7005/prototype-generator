@@ -41,14 +41,14 @@ export function MyForm({isActive, onClosed, header, fields, obj, field_names, pk
     </ModalHeader>
     <Form onSubmit={(e) => {e.preventDefault(); handleSubmit();}}>
       <ModalBody>
-        {fields.map((k,i) => (<>
-          <FormGroup>
+        {fields.map((k,i) => (
+          <FormGroup key={"formGroup"+i}>
             <Label aria-required={required && (required.includes(k))} for={k}>
-              {field_names[i]}{(required && (required.includes(k))) ? <span class="text-danger"> *</span> : ""}
+              {field_names[i]}{(required && (required.includes(k))) ? <span className="text-danger"> *</span> : ""}
             </Label>
             <Input required={required && (required.includes(k))} name={k} defaultValue={obj ? obj[k] : ""} onChange={(e) => handleChange(e)}/>
           </FormGroup>
-        </>))}
+        ))}
       </ModalBody>
       <ModalFooter>
         <Button onClick={() => setIsOpen(false)}>Cancel</Button>

@@ -18,14 +18,15 @@ function App() {
 					<UncontrolledDropdown nav>
 						<DropdownToggle nav caret>Tables</DropdownToggle>
 						<DropdownMenu right>
-							{tables.map((x,i) => (<DropdownItem href={x}>{table_names[i]}</DropdownItem>))}
+							{tables.map((x,i) => (<DropdownItem key={"item"+i} href={x}>{table_names[i]}</DropdownItem>))}
 						</DropdownMenu>
 					</UncontrolledDropdown>
 				</Nav>
 			</Navbar>
 			<Routes>
 				<Route exact path="/" element={<Home tables={tables} table_names={table_names}/>}/ >
-					{tables.map((x,i) => (<Route path={x} element = {<>{components[i]()}</>} />))}
+					{tables.map((x,i) => (
+						<Route path={x} element = {<>{components[i]()}</>} />))}
       </Routes>
 		</Router>
 	</>

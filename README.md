@@ -162,7 +162,12 @@ y
 
 The created application is not meant to be robust by any means. This is merely a tool to get you started in development so you can focus more time into design. Now go make some web apps!
 
+### Making changes to ProtoGen
+If you want to add your own custom methods or make changing to existing method templates, simply search for "[ADD HERE]" in `protogen.py`. As ProtoGen is now, files are created from very long f-strings, so simply construct a string to write your function.
+
+
 ### Planned Improvements
 
 - Improved error handling for APIs
 - More versatile tests (e.g. multiple creates, gets, etc.)
+- Refactor to accept template files rather than tedious f-strings
