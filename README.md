@@ -157,6 +157,11 @@ python clear.py
 y
 ```
 
+
 ## Notes
 
 The created application is not meant to be robust by any means. This is merely a tool to get you started in development so you can focus more time into design. Now go make some web apps!
+
+### Planned Improvements
+
+- Improved error handling for APIs

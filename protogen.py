@@ -465,6 +465,21 @@ class ProtoGen:
     
     return delete,
 
+
+  def make_utils_api(self, module: str) -> list[str]:
+    singular = self.get_singular(module)
+
+    required = \
+     f"@{module}_bp.route('/admin/required', methods=[\"GET\"])\n"\
+     f"def get_{singular}_required_fields():\n"\
+      "\t\"\"\"\n"\
+     f"\tGets all the required fields for {module}\n"\
+      "\t\"\"\"\n"\
+     f"\tresult = db.get_{singular}_required_fields()\n"\
+      "\treturn jsonify(result), 200\n\n"
+    
+    return required,
+
   #endregion
 
   #region DB Tests
@@ -697,14 +712,14 @@ class ProtoGen:
           },
           "api": {
             "src": zip([self.make_gets_api,self.make_posts_api,
-                        self.make_puts_api,self.make_deletes_api],
+                        self.make_puts_api,self.make_deletes_api,self.make_utils_api],
                       ["Get Methods","Create Methods",
-                        "Update Methods","Delete Methods"]),
+                        "Update Methods","Delete Methods","Utility Methods"]),
 
             "tests": zip([self.test_gets_api,self.test_posts_api,
-                          self.test_puts_api,self.test_deletes_api],
+                          self.test_puts_api,self.test_deletes_api,self.make_utils_api],
                         ["Get Methods","Post Methods",
-                          "Put Methods","Delete Methods"])
+                          "Put Methods","Delete Methods","Utility Methods"])
           }
         }
         
