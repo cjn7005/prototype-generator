@@ -147,7 +147,7 @@ class ProtoGen:
     return result 
 
 
-  def get_pk_arguments(self, module: str) -> Dict[str,str]:
+  def get_pk_attributes(self, module: str) -> Dict[str,str]:
     """Returns the column arguments of the primary key"""
     pk = self.get_pk(module)
     return self.modules[module]["attributes"][pk]
@@ -213,6 +213,7 @@ class ProtoGen:
     singular = self.get_singular(module)
     Object = self.get_Object(module)
     pk = self.get_pk(module)
+    pk_type = self.get_pk_attributes(module)["python_type"]
     attrs = self.modules[module]["attributes"]
 
     result = ""
@@ -233,6 +234,7 @@ class ProtoGen:
     result = re.sub(r"\$\(singular\)\$",singular,result)
     result = re.sub(r"\$\(Object\)\$",Object,result)
     result = re.sub(r"\$\(pk\)\$",pk,result)
+    result = re.sub(r"\$\(pk_type\)\$",pk_type,result)
     result = re.sub(r"\$\(global_imports\)\$",global_imports,result)
 
     return result
@@ -335,7 +337,7 @@ class ProtoGen:
     [ADD HERE]
     """
     pk = self.get_pk(module)
-    pk_type = self.get_pk_arguments(module)["python_type"]
+    pk_type = self.get_pk_attributes(module)["python_type"]
     singular = self.get_singular(module)
     Object = self.get_Object(module)
     
@@ -378,7 +380,7 @@ class ProtoGen:
     [ADD HERE]
     """
     pk = self.get_pk(module)
-    pk_type = self.get_pk_arguments(module)["python_type"]
+    pk_type = self.get_pk_attributes(module)["python_type"]
     singular = self.get_singular(module)
     Object = self.get_Object(module)
 
@@ -438,7 +440,7 @@ class ProtoGen:
     [ADD HERE]
     """
     pk = self.get_pk(module)
-    pk_type = self.get_pk_arguments(module)["python_type"]
+    pk_type = self.get_pk_attributes(module)["python_type"]
     singular = self.get_singular(module)
     Object = self.get_Object(module)
 
@@ -517,7 +519,7 @@ class ProtoGen:
     [ADD HERE]
     """
     pk = self.get_pk(module)
-    pk_type = self.get_pk_arguments(module)["python_type"]
+    pk_type = self.get_pk_attributes(module)["python_type"]
     singular = self.get_singular(module)
 
     put = \
@@ -549,7 +551,7 @@ class ProtoGen:
     [ADD HERE]
     """
     pk = self.get_pk(module)
-    pk_type = self.get_pk_arguments(module)["python_type"]
+    pk_type = self.get_pk_attributes(module)["python_type"]
     singular = self.get_singular(module)
 
     delete = \

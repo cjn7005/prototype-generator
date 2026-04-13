@@ -1,0 +1,146 @@
+$(global_imports)$
+
+from database.src.db_utils import *
+from database.src.models import $(Object)$
+
+#region Get Methods
+
+def get_all_$(module)$() -> list[$(Object)$]:
+	"""
+	Returns all $(module)$ in the database
+
+	Returns:
+		list[$(Object)$]: all $(module)$ in the database
+	"""
+	sql = "SELECT * FROM $(module)$;"
+
+	result = exec_get_all(sql)
+
+	return [$(Object)$(row) for row in result]
+
+def get_$(module)$(kwargs) -> list[$(Object)$]:
+	"""
+	Returns $(module)$ with matching attributes
+
+	## Kwargs:
+		$[:$(attr)$ ($(attr_type)$): the $(singular)$'s $(attr)$][\n\t\t]$
+
+	Returns:
+		list[$(Object)$]: all $(module)$ in the database
+	"""
+	if not kwargs: return get_all_$(module)$()
+	sql = "SELECT * FROM $(module)$ WHERE\n"
+	for i,key in enumerate(kwargs):
+		sql += f"\t{key} = %({key})s"
+		sql += ",\n" if i < len(kwargs)-1 else "\n"
+
+	result = exec_get_all(sql,kwargs)
+
+	return [$(Object)$(row) for row in result]
+
+#endregion
+
+#region Create Methods
+
+def create_$(module)$(kwargs) -> $(Object)$:
+	"""
+	Creates and returns a $(singular)$
+
+	## Kwargs:
+		$[:$(attr)$ ($(attr_type)$): the $(singular)$'s $(attr)$][\n\t\t]$
+
+	Returns:
+		$(Object)$: the created $(singular)$
+	"""
+	if len(kwargs) == 0: return None
+	sql = "INSERT INTO $(module)$ ("
+	values = "VALUES("
+	for i,key in enumerate(kwargs):
+		sql += key
+		values += f"%({key})s"
+		sql += ", " if i < len(kwargs)-1 else ") "
+
+		values += ", " if i < len(kwargs)-1 else ")"
+
+	sql += values
+	sql += "\nRETURNING *"
+
+	result = exec_commit_returning(sql,kwargs)[0]
+
+	return $(Object)$(result)
+
+#endregion
+
+#region Update Methods
+
+def update_$(module)$($(pk)$: $(pk_type)$, kwargs) -> $(Object)$:
+	"""
+	Updates and returns a $(singular)$ from its $(pk)$
+
+	Args:
+		$(pk)$ ($(pk_type)$): the $(singular)$ to update
+
+	## Kwargs:
+		$[:$(attr)$ ($(attr_type)$): the $(singular)$'s $(attr)$][\n\t\t]$
+
+	Returns:
+		$(Object)$: the updated $(singular)$
+	"""
+	kwargs = dict(kwargs)
+	if len(kwargs) == 0: return
+	sql = "UPDATE $(module)$ SET \n"
+	for i,key in enumerate(kwargs):
+		sql += f"{key} = %({key})s"
+		sql += ",\n" if i < len(kwargs)-1 else "\n"
+
+	sql += "\nWHERE $(pk)$ = %($(pk)$)s\n"
+	sql += "RETURNING *"
+
+	kwargs["$(pk)$"] = $(pk)$
+	result = exec_commit_returning(sql,kwargs)[0]
+	return $(Object)$(result)
+
+#endregion
+
+#region Delete Methods
+
+def delete_$(module)$($(pk)$: $(pk_type)$) -> $(Object)$:
+	"""
+	Deletes a $(singular)$ from its $(pk)$
+
+	Args:
+		$(pk)$ ($(pk_type)$): the $(singular)$ to delete
+
+	Returns:
+		$(Object)$: the deleted $(singular)$
+	"""
+	sql = "DELETE FROM $(module)$ WHERE $(pk)$ = %($(pk)$)s RETURNING * "
+	result = exec_commit_returning(sql,{"$(pk)$": $(pk)$})[0]
+	return $(Object)$(result)
+
+#endregion
+
+#region Utility Methods
+
+def get_$(singular)$_required_fields() -> list[str]:
+	"""
+	Returns a list of required fields for $(module)$
+
+	Returns:
+		list[str]: a list of required fields for $(module)$
+	"""
+	sql = \
+		"SELECT column_name FROM information_schema.columns\n"\
+		"WHERE table_schema = \'public\'\n"\
+		"\tAND column_default IS NULL\n"\
+		"\tAND is_nullable = \'NO\'\n"\
+		"\tAND is_identity != \'YES\'\n"\
+		"\tAND table_name = \'$(module)$\'"
+
+	result = exec_get_all(sql)
+	if not result: return []
+	result, = [list(row) for row in zip(*result)]
+	return result
+
+#endregion
+
