@@ -24,7 +24,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        cp database/config/db_github.yml database/config/db.yml
+        cp database/config/git_db.yml database/config/db.yml
     - name: Run ProtoGen
       run: |
         python protogen.py
