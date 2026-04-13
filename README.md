@@ -93,7 +93,7 @@ To generate the code, first you must define your backend schema. To do this, you
 Once your models are defined, simply run ProtoGen:
 
 ```zsh
-python protogen.py
+python protogen.py [-f file]
 ```
 
 This will generate `src` and `test` files in `database` and `api`, i.e.:

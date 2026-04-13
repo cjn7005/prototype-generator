@@ -55,6 +55,19 @@ headers = {
 
 #endregion
 
+def pretty_name(string):
+  return re.sub( # Capitalize ID
+    r"\bid\b", 
+    "ID", 
+    re.sub( # Pascalize
+      r"([a-zA-Z])_([a-z])",
+      lambda x: x.group(1) + " " + x.group(2).capitalize(),
+      re.sub( # Capitalize first letter
+        r"^([a-z])",
+        lambda x: x.group().capitalize(), string)
+    ),
+  flags=re.IGNORECASE)
+
 #region Custom input
 
 # File body generator
@@ -71,7 +84,7 @@ custom = {
 
 #endregion
 
-class Stubber:
+class ProtoGen:
 
   modules: Dict[str, Any]
   model_path: str
@@ -308,6 +321,31 @@ class Stubber:
     f"\treturn {Object}(result)\n\n"
 
     return delete,
+
+
+  def make_utils(self, module: str) -> list[str]:
+    singular = self.get_singular(module)
+
+    required = \
+     f"def get_{singular}_required_fields() -> list[str]:\n"\
+      "\t\"\"\"\n"\
+     f"\tReturns a list of required fields for {module}\n\n"\
+      "\tReturns:\n"\
+     f"\t\tlist[str]: a list of required fields for {module}\n"\
+      "\t\"\"\"\n"\
+      "\tsql = \\\n"\
+      "\t\t\"SELECT column_name FROM information_schema.columns\\n\"\\\n"\
+      "\t\t\"WHERE table_schema = \\\'public\\\'\\n\"\\\n"\
+      "\t\t\"\\tAND column_default IS NULL\\n\"\\\n"\
+      "\t\t\"\\tAND is_nullable = \\\'NO\\\'\\n\"\\\n"\
+      "\t\t\"\\tAND is_identity != \\\'YES\\\'\\n\"\\\n"\
+     f"\t\t\"\\tAND table_name = \\\'{module}\\\'\"\n\n"\
+      "\tresult = exec_get_all(sql)\n"\
+      "\tif not result: return []\n"\
+      "\tresult, = [list(row) for row in zip(*result)]\n"\
+      "\treturn result\n\n"
+
+    return required,
 
   #endregion
 
@@ -633,6 +671,8 @@ class Stubber:
 
     #endregion
 
+    #region Writing DB & API
+
     gen = ((direct, subdir, module) for direct in dirs for subdir in subdirs for module in self.modules)
     for i, (direct, subdir, module) in enumerate(gen):
       with open(f"{direct}/{subdir}/{"test_" if subdir == "tests" else ""}"\
@@ -646,14 +686,14 @@ class Stubber:
         methods = {
           "database": {
             "src": zip([self.make_gets,self.make_creates,
-                        self.make_updates,self.make_deletes],
+                        self.make_updates,self.make_deletes,self.make_utils],
                         ["Get Methods","Create Methods",
-                        "Update Methods","Delete Methods"]),
+                        "Update Methods","Delete Methods","Utility Methods"]),
 
             "tests": zip([self.test_gets,self.test_creates,
-                          self.test_updates,self.test_deletes],
+                          self.test_updates,self.test_deletes,self.make_utils],
                         ["Get Methods","Create Methods",
-                          "Update Methods","Delete Methods"])
+                          "Update Methods","Delete Methods","Utility Methods"])
           },
           "api": {
             "src": zip([self.make_gets_api,self.make_posts_api,
@@ -671,6 +711,8 @@ class Stubber:
         for method,label in methods[direct][subdir]:
           f.write(self.write_methods(module,method,label))
 
+    #endregion
+
     #region Frontend
     
     with open("frontend/src/components/Modules.jsx","w") as f:
@@ -683,11 +725,9 @@ class Stubber:
           "\t\ttable_name={"+f"[\"{self.get_Object(module)}\",\"{module.capitalize().replace("_"," ")}\"]"+"}\n"\
           "\t\turl={"+f"\"{api_host}/{module}/\""+"}\n"\
           "\t\tcolumns={"+f"{[attr for attr in obj["attributes"]]}"+"}\n"\
-          "\t\tcolumn_names={"+f"{[
-            re.sub(
-              r"([a-zA-Z])_([a-z])",lambda x: x.group(1) + " " + x.group(2).capitalize(),
-              re.sub(r"^([a-z])",lambda x: x.group().capitalize(), attr))
-                for attr in obj["attributes"]]}"+"}\n"\
+          "\t\tcolumn_names={"+f"{
+            [ pretty_name(attr) for attr in obj["attributes"] ]
+          }"+"}\n"\
           "\t\tpk={"+f"\"{self.get_pk(module)}\""+"}\n"\
           "\t\t/>\n"\
           "}\n\n"
@@ -820,5 +860,5 @@ if __name__ == "__main__":
   parser.add_argument("--file","-f",default="models.json",help="Input models file")
   args = parser.parse_args()
 
-  stubber = Stubber(args.file)
+  stubber = ProtoGen(args.file)
   stubber.main()  

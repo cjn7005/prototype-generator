@@ -33,7 +33,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       let ok = response && response.ok;
       if (!ok) {
         let msg = ("Failed to get "+table_name[1] + 
-                    (response ? ("\nError: "+response.text) : ""));
+                    (response ? ("\nError: "+(await response.text())) : ""));
         setLastResponse( { "text": msg, "ok": ok });
       }
     }
@@ -46,7 +46,6 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       if (!response.ok) {
         console.error(`Response status: ${response.status}`);
       }
-      getData();
     } catch (error) {
       console.error(error);
     }
@@ -54,8 +53,9 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       let ok = response && response.ok;
       let msg = ok ? ("Successfully created "+table_name[0]) : 
                      ("Failed to create "+table_name[0] + 
-                        (response ? ("\nError: "+response.text) : ""));
+                        (response ? ("\nError: "+(await response.text())) : ""));
       setLastResponse( { "text": msg, "ok": ok });
+      getData();
     }
   }
 
@@ -68,7 +68,6 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       if (!response.ok) {
         console.error(`Response status: ${response.status}`);
       }
-      getData();
     } catch (error) {
       console.error(error);
     }
@@ -77,8 +76,9 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       let ok = response && response.ok;
       let msg = ok ? ("Successfully updated "+table_name[0]+" "+selectedObject[pk]) : 
                      ("Failed to update "+table_name[0]+" "+selectedObject[pk] + 
-                        (response ? ("\nError: "+response.text) : ""));
+                        (response ? ("\nError: "+(await response.text())) : ""));
       setLastResponse( { "text": msg, "ok": ok });
+      getData();
     }
   }
 
@@ -89,7 +89,6 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       if (!response.ok) {
         console.error(`Response status: ${response.status}`);
       }
-      getData();
     } catch (error) {
       console.error(error);
     }
@@ -97,12 +96,14 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       let ok = response && response.ok;
       let msg = ok ? ("Successfully deleted "+table_name[0]+" "+selectedObject[pk]) : 
                      ("Failed to delete "+table_name[0]+" "+selectedObject[pk] + 
-                        (response ? ("\nError: "+response.text) : ""));
+                        (response ? ("\nError: "+(await response.text())) : ""));
       setLastResponse( { "text": msg, "ok": ok });
+      getData();
     }
   }
 
-  useEffect(() => { getData(); }, []);
+  // eslint-disable-next-line
+  useEffect(() => getData, []);
 
 
   if (state !== "loading") {

@@ -22,12 +22,14 @@ export function MyForm({isActive, onClosed, header, fields, obj, field_names, pk
   async function handleSubmit() {
     // Clean null values 
     // THIS COULD POTENTIALLY CAUSE ISSUES WITH DESIRED EMPTY VALUES, DELETE IF NECESSARY
-    for (let kv of Object.entries(formData)) {
+    let formCopy = {...formData};
+    for (let kv of Object.entries(formCopy)) {
       if (kv[1] === "") {
-        delete formData[kv[0]];
+        delete formCopy[kv[0]];
       }
     }
-    
+    setFormData(formCopy);
+
     onSubmit(formData, objPK); 
     setIsOpen(false);
   }
