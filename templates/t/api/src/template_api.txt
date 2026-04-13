@@ -1,0 +1,103 @@
+$(global_imports)$
+
+from flask import Blueprint, jsonify, request
+from database.src import $(module)$ as db
+
+$(module)$_bp = Blueprint("$(module)$",__name__,url_prefix="/$(module)$")
+
+#region Get Methods
+
+@$(module)$_bp.route('/<$(pk)$>', methods=["GET"])
+def get_$(module)$_from_pk($(singular)$_$(pk)$: int):
+	"""
+	Returns a specific $(singular)$ from its $(singular)$_$(pk)$
+
+	Args:
+		$(pk)$ $((pk_type))$: the $(singular)$'s $(pk)$
+	"""
+	result = db.get_$(module)$({"$(singular)$_$(pk)$": $(singular)$_$(pk)$})
+	if result is not None:
+		return jsonify([row.__dict__ for row in result]), 200
+	else:
+		return jsonify({"error": f"$(Object)$ {$(singular)$_$(pk)$} not found"}), 404
+
+@$(module)$_bp.route('/', methods=["GET"])
+def get_$(module)$_from_query():
+	"""
+	Returns $(module)$ with matching attributes
+
+	## Query parameters:
+		$[:$(attr)$ ($(attr_type)$): the $(singular)$'s $(attr)$][\n\t\t]$
+
+	Returns:
+		list[$(Object)$]: all $(module)$ in the database
+	"""
+	result = db.get_$(module)$(request.args)
+	if result is not None:
+		return jsonify([row.__dict__ for row in result]), 200
+	else:
+		return jsonify([]), 204
+
+#endregion
+
+#region Create Methods
+
+@$(module)$_bp.route('/', methods=["POST"])
+def post_$(module)$():
+	"""
+	Creates and returns a $(singular)$
+
+	## Body Parameters:
+		$[:$(attr)$ ($(attr_type)$): the $(singular)$'s $(attr)$][\n\t\t]$
+
+	"""
+	result = db.create_$(module)$(request.json)
+	return jsonify(result.__dict__), 201
+
+#endregion
+
+#region Update Methods
+
+@$(module)$_bp.route('/<$(pk)$>', methods=["PUT"])
+def put_$(module)$($(singular)$_$(pk)$: int):
+	"""
+	Updates and returns a $(singular)$ from its $(singular)$_$(pk)$
+
+	Args:
+		$(pk)$ $((pk_type))$: the $(singular)$ to update
+
+	## Query parameters:
+		$[:$(attr)$ ($(attr_type)$): the $(singular)$'s $(attr)$][\n\t\t]$
+	"""
+	result = db.update_$(module)$($(singular)$_$(pk)$, dict(request.args))
+	return jsonify(result.__dict__), 200
+
+#endregion
+
+#region Delete Methods
+
+@$(module)$_bp.route('/<$(pk)$>', methods=["DELETE"])
+def delete_$(module)$($(singular)$_$(pk)$: int):
+	"""
+	Deletes a $(singular)$ from its $(singular)$_$(pk)$
+
+	Args:
+		$(pk)$ $((pk_type))$: the $(singular)$ to delete
+	"""
+	result = db.delete_$(module)$($(singular)$_$(pk)$)
+	return jsonify(result.__dict__), 200
+
+#endregion
+
+#region Utility Methods
+
+@$(module)$_bp.route('/admin/required', methods=["GET"])
+def get_$(singular)$_required_fields():
+	"""
+	Gets all the required fields for $(module)$
+	"""
+	result = db.get_$(singular)$_required_fields()
+	return jsonify(result), 200
+
+#endregion
+

@@ -15,10 +15,12 @@ api_host = "http://127.0.0.1:5000"
 # imports, globals, etc.
 
 global_imports = ( # for imports such as UUID or datetime
-    "from uuid import UUID\n"\
-    "import datetime\n"\
-    "from typing import Any\n\n"
-  )
+"""
+from uuid import UUID
+import datetime
+from typing import Any
+"""
+)
 
 headers = {
   "api/src": lambda module, stubber: ( global_imports + \
@@ -191,6 +193,47 @@ class ProtoGen:
       else:
         sample = dependencies[attr][2]
       result += (f"\t\t\"{attr}\": {sample},\n")
+
+    return result
+  
+
+  def parse_line(self, line: str, module: str) -> str:
+    """
+    Parses the current line, replacing the escape expressions with the relevant module
+
+    Currently supported expressions:
+        $(module)$ - the module name
+        $(singular)$ - the singular name
+        $(Object)$ - the Object name
+        $(pk)$ - the module's primary key
+        $(global_imports)$ - the global imports to apply to all files
+        $[...][...]$ - loop over attributes (only one loop per line) ([line][line_end])
+        $[...$(attr)$...][...]$ - reference attribute within loop
+    """
+    singular = self.get_singular(module)
+    Object = self.get_Object(module)
+    pk = self.get_pk(module)
+    attrs = self.modules[module]["attributes"]
+
+    result = ""
+    looped = False
+    for pre, body, end, suf in re.findall(r"(.*?)\$\[([^\]]*)\]\[([^\]]*)\]\$([^\$]*?)",line):
+        looped = True
+        result += pre
+        for attr, obj in attrs.items():
+            bdy = re.sub(r"\$\(attr\)\$",attr,body)
+            bdy = re.sub(r"\$\(attr_type\)\$",obj["python_type"],bdy)
+            result += bdy
+            result += end.replace("\\n","\n").replace("\\t","\t")
+        result += suf
+
+    if not looped: result = line
+    
+    result = re.sub(r"\$\(module\)\$",module,result)
+    result = re.sub(r"\$\(singular\)\$",singular,result)
+    result = re.sub(r"\$\(Object\)\$",Object,result)
+    result = re.sub(r"\$\(pk\)\$",pk,result)
+    result = re.sub(r"\$\(global_imports\)\$",global_imports,result)
 
     return result
 
@@ -832,43 +875,19 @@ class ProtoGen:
 
     #region Writing DB & API
 
-    gen = ((direct, subdir, module) for direct in dirs for subdir in subdirs for module in self.modules)
-    for i, (direct, subdir, module) in enumerate(gen):
-      with open(f"{direct}/{subdir}/{"test_" if subdir == "tests" else ""}"\
-                f"{module}{"_api" if subdir == "tests" and direct == "api" else ""}.py","w") as f:
-
-        # Write headers
-        f.write(headers.get(direct,lambda x,y:"")(module,self))
-        f.write(headers.get(f"{direct}/{subdir}",lambda x,y:"")(module,self))
-        
-        # Write methods and test methods
-        methods = {
-          "database": {
-            "src": zip([self.make_gets,self.make_creates,
-                        self.make_updates,self.make_deletes,self.make_utils],
-                        ["Get Methods","Create Methods",
-                        "Update Methods","Delete Methods","Utility Methods"]),
-
-            "tests": zip([self.test_gets,self.test_creates,
-                          self.test_updates,self.test_deletes,self.test_utils],
-                        ["Get Methods","Create Methods",
-                          "Update Methods","Delete Methods","Utility Methods"])
-          },
-          "api": {
-            "src": zip([self.make_gets_api,self.make_posts_api,
-                        self.make_puts_api,self.make_deletes_api,self.make_utils_api],
-                      ["Get Methods","Create Methods",
-                        "Update Methods","Delete Methods","Utility Methods"]),
-
-            "tests": zip([self.test_gets_api,self.test_posts_api,
-                          self.test_puts_api,self.test_deletes_api,self.test_utils_api],
-                        ["Get Methods","Post Methods",
-                          "Put Methods","Delete Methods","Utility Methods"])
-          }
-        }
-        
-        for method,label in methods[direct][subdir]:
-          f.write(self.write_methods(module,method,label))
+    full_path = os.path.join(os.path.dirname(__file__), f"templates/")
+    for dir_p, _, files in os.walk(full_path):
+        for file in files:
+            for module in self.modules:
+                dir_write = dir_p.replace("templates", ".") # Extract from templates/
+                file_write = file.replace("template",module)
+                file_write = ''.join(file_write.split('.')[:-1]) + ".py"
+                os.makedirs(dir_write, exist_ok=True)
+                with open(os.path.join(dir_p, file),"r") as template, \
+                    open(os.path.join(dir_write, file_write), "w") as f:
+                    while line := template.readline():
+                        line = self.parse_line(line, module)
+                        f.write(line)
 
     #endregion
 
