@@ -15,7 +15,7 @@ Prototype Generator (or ProtoGen for short) is a tool for getting started creati
 * [![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](https://react.dev/)
 
 
-This tool requires Python 3, PostgreSQL, Node.js, React.js, and Reactstrap. To install the necessary Python packages run:
+This tool requires Python 3.12, PostgreSQL, Node.js, React.js, and Reactstrap. To install the necessary Python packages run:
 
 ```zsh
 pip install -r requirements.txt
