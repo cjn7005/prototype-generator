@@ -24,10 +24,10 @@ headers = {
   "api/src": lambda module, stubber: ( global_imports + \
     "from flask import Blueprint, abort, jsonify, request\n"\
     "from werkzeug.exceptions import HTTPException\n"\
-   f"from database.src import {module} as db\n\n"\
+   f"from database.src import {module} as db\n"\
+    "from src.api_utils import *\n\n"\
    f"{module}_bp = Blueprint(\"{module}\",__name__,url_prefix=\"/{module}\")\n"\
-   f"abort404 = lambda {stubber.get_pk(module)}: abort(404, description=f\"{stubber.get_Object(module)} "+"{"+str(stubber.get_pk(module))+"} not found\")\n"\
-   f"abort500 = lambda e: abort(500, description=\"Something went wrong\", original_exception=e)"
+   f"abort404 = lambda {stubber.get_pk(module)}: abort(404, description=f\"{stubber.get_Object(module)} "+"{"+str(stubber.get_pk(module))+"} not found\")\n\n"
   ),
 
   "api/tests": lambda module, stubber: ( global_imports + \

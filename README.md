@@ -24,8 +24,7 @@ pip install -r requirements.txt
 To install the necessary react packages, navigate to `frontend/` and run: 
 
 ```zsh
-npx create-react-app .
-npm install reactstrap react react-dom
+npm install
 ```
 
 ### Config
@@ -93,7 +92,7 @@ To generate the code, first you must define your backend schema. To do this, you
 Once your models are defined, simply run ProtoGen:
 
 ```zsh
-python protogen.py [-f file]
+python protogen.py [-f model_file]
 ```
 
 This will generate `src` and `test` files in `database` and `api`, i.e.:

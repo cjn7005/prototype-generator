@@ -10,8 +10,9 @@ database/*
 api/*
 !.ignoreme
 !git_db.yml
-!db_utils.py
-!test_utils.py
+!*/db_utils.py
+!*/api_utils.py
+!*/test_utils.py
 
 frontend/src/components/Modules.jsx
 

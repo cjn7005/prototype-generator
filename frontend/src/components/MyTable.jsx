@@ -18,7 +18,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
   async function getRequiredFields() {
     let response;
     try {
-      response = await fetch(url+"/admin/required", { credentials: "include" });
+      response = await fetch(url+"admin/required", { credentials: "include" });
       let dat = await response.json()
       if (!response.ok) {
         console.error(`Response status: ${response.status}`);
@@ -31,8 +31,10 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
     finally {
       let ok = response && response.ok;
       if (!ok) {
-        let msg = ("Failed to get "+table_name[1] + 
-                    (response ? ("\nError: "+(await response.text())) : ""));
+        let bdy = await response.json();
+        let txt = bdy.error ? bdy.error : bdy;
+        let msg = ("Failed to get required fields for "+table_name[1] + 
+                    (response ? (" – "+(txt)) : ""));
         setLastResponse( { "text": msg, "ok": ok });
       }
     }
@@ -56,8 +58,11 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
     finally {
       let ok = response && response.ok;
       if (!ok) {
+        let bdy = await response.json();
+        let txt = bdy?.error ? bdy.error : bdy;
+        console.log(txt);
         let msg = ("Failed to get "+table_name[1] + 
-                    (response ? ("\nError: "+(await response.text())) : ""));
+                    (response ? (" – "+(txt)) : ""));
         setLastResponse( { "text": msg, "ok": ok });
       }
     }
@@ -76,9 +81,12 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
     }
     finally {
       let ok = response && response.ok;
+      let bdy = await response.json();
+      let txt = bdy?.error ? bdy.error : bdy;
+      
       let msg = ok ? ("Successfully created "+table_name[0]) : 
                      ("Failed to create "+table_name[0] + 
-                        (response ? ("\nError: "+(await response.text())) : ""));
+                      (response ? (" – "+(txt)) : ""));
       setLastResponse( { "text": msg, "ok": ok });
       getData();
     }
@@ -98,9 +106,12 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
     }
     finally {
       let ok = response && response.ok;
+      let bdy = await response.json();
+      let txt = bdy?.error ? bdy.error : bdy;
+
       let msg = ok ? ("Successfully updated "+table_name[0]+" "+selectedObject[pk]) : 
                      ("Failed to update "+table_name[0]+" "+selectedObject[pk] + 
-                        (response ? ("\nError: "+(await response.text())) : ""));
+                      (response ? (" – "+(txt)) : ""));
       setLastResponse( { "text": msg, "ok": ok });
       getData();
     }
@@ -118,9 +129,12 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
     }
     finally {
       let ok = response && response.ok;
+      let bdy = await response.json();
+      let txt = bdy?.error ? bdy.error : bdy;
+
       let msg = ok ? ("Successfully deleted "+table_name[0]+" "+selectedObject[pk]) : 
                      ("Failed to delete "+table_name[0]+" "+selectedObject[pk] + 
-                        (response ? ("\nError: "+(await response.text())) : ""));
+                        (response ? (" – "+(txt)) : ""));
       setLastResponse( { "text": msg, "ok": ok });
       getData();
     }
