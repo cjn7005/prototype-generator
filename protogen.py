@@ -51,7 +51,9 @@ headers = {
 
   "server" : lambda module, stubber: ( global_imports + \
     "from flask import Flask, jsonify\n"\
-    "from flask_cors import CORS\n\n"
+    "from flask_cors import CORS\n"\
+    "import re\n"\
+    "import psycopg2.errors\n\n"
   )
 }
 
@@ -409,15 +411,10 @@ class ProtoGen:
      f"\tArgs:\n"\
      f"\t\t{pk} ({pk_type}): the {singular}'s {pk}\n"\
       "\t\"\"\"\n"\
-      "\ttry:\n"\
-     f"\t\tresult = db.get_{module}("+"{"+f"\"{pk}\": {pk}"+"})\n\n"\
-      "\t\tif not result:\n"\
-     f"\t\t\tabort(404,{self.get_pk(module)})\n\n"\
-      "\t\treturn jsonify([row.__dict__ for row in result]), 200\n\n"\
-      "\texcept HTTPException:\n"\
-      "\t\traise\n"\
-      "\texcept Exception as e:\n"\
-      "\t\tabort500(e)\n\n"
+     f"\tresult = db.get_{module}("+"{"+f"\"{pk}\": {pk}"+"})\n\n"\
+      "\tif not result:\n"\
+     f"\t\tabort(404,{self.get_pk(module)})\n\n"\
+      "\treturn jsonify([row.__dict__ for row in result]), 200\n\n"
     
     queried = \
     f"@{module}_bp.route('/', methods=[\"GET\"])\n"\
@@ -435,13 +432,8 @@ class ProtoGen:
       "\n\tReturns:\n"\
      f"\t\tlist[{Object}]: all {module} in the database\n"\
       "\t\"\"\"\n"\
-      "\ttry:\n"\
-     f"\t\tresult = db.get_{module}(request.args)\n"\
-      "\t\treturn jsonify([row.__dict__ for row in result]), 200\n"\
-      "\texcept HTTPException:\n"\
-      "\t\traise\n"\
-      "\texcept Exception as e:\n"\
-      "\t\tabort500(e)\n\n"
+     f"\tresult = db.get_{module}(request.args)\n"\
+      "\treturn jsonify([row.__dict__ for row in result]), 200\n\n"
     
     return from_pk, queried 
 
@@ -469,18 +461,13 @@ class ProtoGen:
 
     post += \
       "\n\t\"\"\"\n"\
-      "\ttry:\n"\
-      "\t\tbody = request.json\n"\
-     f"\t\trequired = set(db.get_{self.get_singular(module)}_required_fields())\n"\
-      "\t\tkeys = set(body)\n\n"\
-      "\t\tif not (required <= keys):\n"\
-      "\t\t\tabort(400, description=f\"Missing required fields in request body: {[str(key) for key in (required - keys)]}\")\n\n"\
-     f"\t\tresult = db.create_{module}(body)\n"\
-      "\t\treturn jsonify(result.__dict__), 201\n\n"\
-      "\texcept HTTPException:\n"\
-      "\t\traise\n"\
-      "\texcept Exception as e:\n"\
-      "\t\tabort500(e)\n\n"
+      "\tbody = request.json\n"\
+     f"\trequired = set(db.get_{self.get_singular(module)}_required_fields())\n"\
+      "\tkeys = set(body)\n\n"\
+      "\tif not (required <= keys):\n"\
+      "\t\tabort(400, description=f\"Missing required fields in request body: {[str(key) for key in (required - keys)]}\")\n\n"\
+     f"\tresult = db.create_{module}(body)\n"\
+      "\treturn jsonify(result.__dict__), 201\n\n"
     
     return post,
 
@@ -511,15 +498,10 @@ class ProtoGen:
 
     put += \
       "\t\"\"\"\n"\
-      "\ttry:\n"\
-     f"\t\tif not db.get_{module}("+"{"+f"\"{self.get_pk(module)}\":{self.get_pk(module)}"+"}):\n"\
-     f"\t\t\tabort404({self.get_pk(module)})\n\n"\
-     f"\t\tresult = db.update_{module}({pk}, dict(request.args))\n"\
-      "\t\treturn jsonify(result.__dict__), 200\n\n"\
-      "\texcept HTTPException:\n"\
-      "\t\traise\n"\
-      "\texcept Exception as e:\n"\
-      "\t\tabort500(e)\n\n"
+     f"\tif not db.get_{module}("+"{"+f"\"{self.get_pk(module)}\":{self.get_pk(module)}"+"}):\n"\
+     f"\t\tabort404({self.get_pk(module)})\n\n"\
+     f"\tresult = db.update_{module}({pk}, dict(request.args))\n"\
+      "\treturn jsonify(result.__dict__), 200\n\n"
     
     return put,
 
@@ -542,15 +524,10 @@ class ProtoGen:
       "\tArgs:\n"\
      f"\t\t{pk} ({pk_type}): the {singular} to delete\n"\
       "\t\"\"\"\n"\
-      "\ttry:\n"\
-     f"\t\tif not db.get_{module}("+"{"+f"\"{self.get_pk(module)}\":{self.get_pk(module)}"+"}):\n"\
-     f"\t\t\tabort404({self.get_pk(module)})\n\n"\
-     f"\t\tresult = db.delete_{module}({pk})\n"\
-      "\t\treturn jsonify(result.__dict__), 200\n\n"\
-      "\texcept HTTPException:\n"\
-      "\t\traise\n"\
-      "\texcept Exception as e:\n"\
-      "\t\tabort500(e)\n\n"
+     f"\tif not db.get_{module}("+"{"+f"\"{self.get_pk(module)}\":{self.get_pk(module)}"+"}):\n"\
+     f"\t\tabort404({self.get_pk(module)})\n\n"\
+     f"\tresult = db.delete_{module}({pk})\n"\
+      "\treturn jsonify(result.__dict__), 200\n\n"
     
     return delete,
 
@@ -569,13 +546,8 @@ class ProtoGen:
       "\t\"\"\"\n"\
      f"\tGets all the required fields for {module}\n"\
       "\t\"\"\"\n"\
-      "\ttry:\n"\
-     f"\t\tresult = db.get_{singular}_required_fields()\n"\
-      "\t\treturn jsonify(result), 200\n\n"\
-      "\texcept HTTPException:\n"\
-      "\t\traise\n"\
-      "\texcept Exception as e:\n"\
-      "\t\tabort500(e)\n\n"
+     f"\tresult = db.get_{singular}_required_fields()\n"\
+      "\treturn jsonify(result), 200\n\n"
     
     return required,
 
@@ -1034,10 +1006,22 @@ class ProtoGen:
         "@app.errorhandler(404)\n"\
         "def resource_not_found(e):\n"\
         "\treturn jsonify(error=str(e)), 404\n\n"\
-        "@app.errorhandler(500)\n"\
+        "@app.errorhandler(psycopg2.errors.Error)\n"\
+        "def postgres_error(e):\n"\
+        "\t# Chopping up psycopg2 errors to be less verbose for the frontend\n"\
+        "\tif t := re.search(r\"DETAIL:\s*(?P<detail>.+)\",str(e),re.MULTILINE):\n"\
+        "\t\ttxt = t.group(\"detail\")\n"\
+        "\telif t := re.search(r\"(?P<detail>.+)\s*LINE\s*[0-9]+:\",str(e),re.MULTILINE):\n"\
+        "\t\ttxt = t.group(\"detail\")\n"\
+        "\telif t := re.search(r\"FATAL:\s*(?P<detail>.+)\",str(e),re.MULTILINE):\n"\
+        "\t\ttxt = t.group(\"detail\")\n"\
+        "\telse:\n"\
+        "\t\treturn internal_server_error(e)\n\n"\
+        "\treturn jsonify(error=txt), 400\n\n"\
+        "@app.errorhandler(Exception)\n"\
         "def internal_server_error(e):\n"\
-        "\tprint(e.original_exception)\n"\
-        "\treturn jsonify(error=str(e)), 500\n\n"\
+        "\tprint(e)\n"\
+        "\treturn jsonify(error=\"Something went wrong\"), 500\n"\
         "@app.route('/')\n"\
         "def hello_world():\n"\
         "\treturn 'Hello world!'\n\n"\
