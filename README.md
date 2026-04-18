@@ -168,6 +168,6 @@ If you want to add your own custom methods or make changing to existing method t
 
 ### Planned Improvements
 
-- Improved error handling for APIs
-- More versatile tests (e.g. multiple creates, gets, etc.)
-- Refactor to accept template files rather than tedious f-strings
+- [x] Improved error handling for APIs
+- [ ] More versatile tests (e.g. multiple creates, gets, etc.)
+- [ ] Refactor to accept template files rather than tedious f-strings
