@@ -9,7 +9,7 @@ from database.src.db_utils import exec_sql_file
 from translator import translate_diagram
 
 # Flask api default
-api_host = "http://127.0.0.1:5000"
+api_host = "http://localhost:5000"
 
 #region Headers
 # imports, globals, etc.
@@ -22,9 +22,12 @@ global_imports = ( # for imports such as UUID or datetime
 
 headers = {
   "api/src": lambda module, stubber: ( global_imports + \
-    "from flask import Blueprint, jsonify, request\n"\
+    "from flask import Blueprint, abort, jsonify, request\n"\
+    "from werkzeug.exceptions import HTTPException\n"\
    f"from database.src import {module} as db\n\n"\
-   f"{module}_bp = Blueprint(\"{module}\",__name__,url_prefix=\"/{module}\")\n\n"
+   f"{module}_bp = Blueprint(\"{module}\",__name__,url_prefix=\"/{module}\")\n"\
+   f"abort404 = lambda {stubber.get_pk(module)}: abort(404, description=f\"{stubber.get_Object(module)} "+"{"+str(stubber.get_pk(module))+"} not found\")\n"\
+   f"abort500 = lambda e: abort(500, description=\"Something went wrong\", original_exception=e)"
   ),
 
   "api/tests": lambda module, stubber: ( global_imports + \
@@ -47,9 +50,8 @@ headers = {
   ),
 
   "server" : lambda module, stubber: ( global_imports + \
-    "from flask import Flask\n"\
-    "from flask_cors import CORS\n"\
-    "import sys\n\n"
+    "from flask import Flask, jsonify\n"\
+    "from flask_cors import CORS\n\n"
   )
 }
 
@@ -400,18 +402,22 @@ class ProtoGen:
     Object = self.get_Object(module)
 
     from_pk = \
-    f"@{module}_bp.route('/<{pk}>', methods=[\"GET\"])\n"\
-    f"def get_{module}_from_pk({pk}: {pk_type}):\n"\
+     f"@{module}_bp.route('/<{pk}>', methods=[\"GET\"])\n"\
+     f"def get_{module}_from_pk({pk}: {pk_type}):\n"\
       "\t\"\"\"\n"\
-    f"\tReturns a specific {singular} from its {pk}\n\n"\
-    f"\tArgs:\n"\
-    f"\t\t{pk} ({pk_type}): the {singular}'s {pk}\n"\
+     f"\tReturns a specific {singular} from its {pk}\n\n"\
+     f"\tArgs:\n"\
+     f"\t\t{pk} ({pk_type}): the {singular}'s {pk}\n"\
       "\t\"\"\"\n"\
-    f"\tresult = db.get_{module}("+"{"+f"\"{pk}\": {pk}"+"})\n"\
-      "\tif result is not None:\n"\
-      "\t\treturn jsonify([row.__dict__ for row in result]), 200\n"\
-      "\telse:\n"\
-      "\t\treturn jsonify({\"error\": f\""+f"{Object}"+" {"+f"{pk}"+"} not found\"}), 404\n\n"
+      "\ttry:\n"\
+     f"\t\tresult = db.get_{module}("+"{"+f"\"{pk}\": {pk}"+"})\n\n"\
+      "\t\tif not result:\n"\
+     f"\t\t\tabort(404,{self.get_pk(module)})\n\n"\
+      "\t\treturn jsonify([row.__dict__ for row in result]), 200\n\n"\
+      "\texcept HTTPException:\n"\
+      "\t\traise\n"\
+      "\texcept Exception as e:\n"\
+      "\t\tabort500(e)\n\n"
     
     queried = \
     f"@{module}_bp.route('/', methods=[\"GET\"])\n"\
@@ -427,13 +433,15 @@ class ProtoGen:
 
     queried += \
       "\n\tReturns:\n"\
-    f"\t\tlist[{Object}]: all {module} in the database\n"\
+     f"\t\tlist[{Object}]: all {module} in the database\n"\
       "\t\"\"\"\n"\
-    f"\tresult = db.get_{module}(request.args)\n"\
-      "\tif result is not None:\n"\
+      "\ttry:\n"\
+     f"\t\tresult = db.get_{module}(request.args)\n"\
       "\t\treturn jsonify([row.__dict__ for row in result]), 200\n"\
-      "\telse:\n"\
-      "\t\treturn jsonify([]), 204\n\n"
+      "\texcept HTTPException:\n"\
+      "\t\traise\n"\
+      "\texcept Exception as e:\n"\
+      "\t\tabort500(e)\n\n"
     
     return from_pk, queried 
 
@@ -461,8 +469,18 @@ class ProtoGen:
 
     post += \
       "\n\t\"\"\"\n"\
-    f"\tresult = db.create_{module}(request.json)\n"\
-      "\treturn jsonify(result.__dict__), 201\n\n"
+      "\ttry:\n"\
+      "\t\tbody = request.json\n"\
+     f"\t\trequired = set(db.get_{self.get_singular(module)}_required_fields())\n"\
+      "\t\tkeys = set(body)\n\n"\
+      "\t\tif not (required <= keys):\n"\
+      "\t\t\tabort(400, description=f\"Missing required fields in request body: {[str(key) for key in (required - keys)]}\")\n\n"\
+     f"\t\tresult = db.create_{module}(body)\n"\
+      "\t\treturn jsonify(result.__dict__), 201\n\n"\
+      "\texcept HTTPException:\n"\
+      "\t\traise\n"\
+      "\texcept Exception as e:\n"\
+      "\t\tabort500(e)\n\n"
     
     return post,
 
@@ -493,8 +511,15 @@ class ProtoGen:
 
     put += \
       "\t\"\"\"\n"\
-    f"\tresult = db.update_{module}({pk}, dict(request.args))\n"\
-      "\treturn jsonify(result.__dict__), 200\n\n"
+      "\ttry:\n"\
+     f"\t\tif not db.get_{module}("+"{"+f"\"{self.get_pk(module)}\":{self.get_pk(module)}"+"}):\n"\
+     f"\t\t\tabort404({self.get_pk(module)})\n\n"\
+     f"\t\tresult = db.update_{module}({pk}, dict(request.args))\n"\
+      "\t\treturn jsonify(result.__dict__), 200\n\n"\
+      "\texcept HTTPException:\n"\
+      "\t\traise\n"\
+      "\texcept Exception as e:\n"\
+      "\t\tabort500(e)\n\n"
     
     return put,
 
@@ -510,15 +535,22 @@ class ProtoGen:
     singular = self.get_singular(module)
 
     delete = \
-    f"@{module}_bp.route('/<{pk}>', methods=[\"DELETE\"])\n"\
-    f"def delete_{module}({pk}: {pk_type}):\n"\
+     f"@{module}_bp.route('/<{pk}>', methods=[\"DELETE\"])\n"\
+     f"def delete_{module}({pk}: {pk_type}):\n"\
       "\t\"\"\"\n"\
-    f"\tDeletes a {singular} from its {pk}\n\n"\
+     f"\tDeletes a {singular} from its {pk}\n\n"\
       "\tArgs:\n"\
-    f"\t\t{pk} ({pk_type}): the {singular} to delete\n"\
+     f"\t\t{pk} ({pk_type}): the {singular} to delete\n"\
       "\t\"\"\"\n"\
-    f"\tresult = db.delete_{module}({pk})\n"\
-      "\treturn jsonify(result.__dict__), 200\n\n"
+      "\ttry:\n"\
+     f"\t\tif not db.get_{module}("+"{"+f"\"{self.get_pk(module)}\":{self.get_pk(module)}"+"}):\n"\
+     f"\t\t\tabort404({self.get_pk(module)})\n\n"\
+     f"\t\tresult = db.delete_{module}({pk})\n"\
+      "\t\treturn jsonify(result.__dict__), 200\n\n"\
+      "\texcept HTTPException:\n"\
+      "\t\traise\n"\
+      "\texcept Exception as e:\n"\
+      "\t\tabort500(e)\n\n"
     
     return delete,
 
@@ -537,8 +569,13 @@ class ProtoGen:
       "\t\"\"\"\n"\
      f"\tGets all the required fields for {module}\n"\
       "\t\"\"\"\n"\
-     f"\tresult = db.get_{singular}_required_fields()\n"\
-      "\treturn jsonify(result), 200\n\n"
+      "\ttry:\n"\
+     f"\t\tresult = db.get_{singular}_required_fields()\n"\
+      "\t\treturn jsonify(result), 200\n\n"\
+      "\texcept HTTPException:\n"\
+      "\t\traise\n"\
+      "\texcept Exception as e:\n"\
+      "\t\tabort500(e)\n\n"
     
     return required,
 
@@ -668,7 +705,7 @@ class ProtoGen:
 
     test_get_one = \
      f"def test_get_one_{singular}(one_{singular}):\n"\
-      "\tresult = get_rest_call(f\"{BASE}/{one_"+f"{singular}.{pk}"+"}\")[0]\n"\
+     f"\tresult = get_rest_call(BASE+str(one_{singular}.{pk}))[0]\n"\
      f"\tassert result.get(\"{pk}\"), \"Failed to get one {singular}\"\n\n"
 
     return test_get_all, test_get_one
@@ -991,16 +1028,22 @@ class ProtoGen:
       f.write("\n")
 
       f.write(
+        "@app.errorhandler(400)\n"\
+        "def bad_request(e):\n"\
+        "\treturn jsonify(error=str(e)), 400\n\n"\
+        "@app.errorhandler(404)\n"\
+        "def resource_not_found(e):\n"\
+        "\treturn jsonify(error=str(e)), 404\n\n"\
+        "@app.errorhandler(500)\n"\
+        "def internal_server_error(e):\n"\
+        "\tprint(e.original_exception)\n"\
+        "\treturn jsonify(error=str(e)), 500\n\n"\
         "@app.route('/')\n"\
         "def hello_world():\n"\
         "\treturn 'Hello world!'\n\n"\
         "if __name__ == \"__main__\":\n"\
         "\t# python3 -m flask --app api/server.py run --debug\n"\
-        "\tif len(sys.argv) > 1:\n"\
-        "\t\tdebug = sys.argv[1] == \"--debug\"\n"\
-        "\telse:\n"\
-        "\t\tdebug = False\n"\
-        "\tapp.run(debug=debug)\n"
+        "\tapp.run()\n"
       )
 
       #endregion
