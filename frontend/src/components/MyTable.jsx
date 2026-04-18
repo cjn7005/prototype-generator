@@ -1,4 +1,3 @@
-import '../App.css';
 import { Alert, Button, Modal, ModalFooter, ModalHeader, Table } from 'reactstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useEffect, useState } from 'react';
