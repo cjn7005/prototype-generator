@@ -22,9 +22,10 @@ This tool requires Python 3.12, PostgreSQL, Node.js, React.js, and Reactstrap. T
 pip install -r requirements.txt
 ```
 
-To install the necessary react packages, navigate to `frontend/` and run: 
+To install the necessary react packages, navigate to `frontend/` and install the packages: 
 
 ```zsh
+cd frontend
 npm install
 ```
 
@@ -92,8 +93,10 @@ To generate the code, first you must define your backend schema. To do this, you
 
 Once your models are defined, simply run ProtoGen:
 
+> [!NOTE] `model_file` should be relative to the root directory.
+
 ```zsh
-python protogen.py [-f model_file]
+python -m protogen.protogen [-f model_file]
 ```
 
 This will generate `src` and `test` files in `database` and `api`, i.e.:
@@ -123,9 +126,10 @@ ProtoGen will also generate the text file `database/schema/schema.txt`. This is 
 
 ## Frontend
 
-ProtoGen will also create a (*very*) basic frontend UI to interact with your backend. It is simply one table per model that allows for creating, updating, and deleting your objects. Each table is located at "http://{host}:{port}/{module}". To run the frontend, navigate to `frontend/` and run:
+ProtoGen will also create a (*very*) basic frontend UI to interact with your backend. It is simply one table per model that allows for creating, updating, and deleting your objects. Each table is located at "http://{host}:{port}/{module}". To run the frontend, navigate to `frontend/` and start Node.js:
 
 ```zsh 
+cd frontend
 npm start
 ```
 
@@ -153,7 +157,7 @@ If you wish to remove your generated files, simply run the clearer. *This is mai
 > This will **DELETE EVERY FILE** in the src and test directories (except for .ignoremes and utils) as well as **DROP ALL THE TABLES IN THE DATABASE**. Be **VERY** certain you do not have any valuable files in these directories before running the clearer.
 
 ```zsh
-python clear.py
+python -m protogen.clear [-f model_file]
 y
 ```
 

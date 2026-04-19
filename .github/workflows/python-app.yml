@@ -46,7 +46,7 @@ jobs:
 
     - name: Run ProtoGen
       run: |
-        python protogen.py
+        python -m protogen.protogen
 
     - name: Wait for Postgres
       run: |

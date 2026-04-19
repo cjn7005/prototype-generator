@@ -6,7 +6,9 @@ from typing import Any, Dict
 from psycopg2.errors import UndefinedTable
 
 from database.src.db_utils import exec_sql_file
-from translator import translate_diagram
+from protogen.translator import translate_diagram
+
+here = os.path.dirname(__file__)
 
 # Flask api default
 api_host = "http://localhost:5000"
@@ -23,7 +25,6 @@ global_imports = ( # for imports such as UUID or datetime
 headers = {
   "api/src": lambda module, stubber: ( global_imports + \
     "from flask import Blueprint, abort, jsonify, request\n"\
-    "from werkzeug.exceptions import HTTPException\n"\
    f"from database.src import {module} as db\n\n"\
    f"{module}_bp = Blueprint(\"{module}\",__name__,url_prefix=\"/{module}\")\n"\
    f"abort404 = lambda {stubber.get_pk(module)}: abort(404, description=f\"{stubber.get_Object(module)} "+"{"+str(stubber.get_pk(module))+"} not found\")\n\n"
@@ -782,7 +783,7 @@ class ProtoGen:
 
     #region Models
 
-    with open("database/src/models.py","w") as f:
+    with open(os.path.join(here,"../database/src/models.py"),"w") as f:
       f.write(global_imports)
 
       for module in self.modules:
@@ -813,7 +814,7 @@ class ProtoGen:
     for module in self.modules:
       attrs = self.modules[module]["attributes"]
 
-      with open(f"database/schema/{module}.sql", "w") as f:
+      with open(os.path.join(here,f"../database/schema/{module}.sql"), "w") as f:
         f.write(f"CREATE TABLE IF NOT EXISTS {module} (\n")
 
         for i, (attr,obj) in enumerate(attrs.items()):
@@ -824,7 +825,7 @@ class ProtoGen:
         f.write(");\n")
 
       try:
-        exec_sql_file(f"schema/{module}.sql")
+        exec_sql_file(f"../database/schema/{module}.sql")
       except UndefinedTable as e:
         class DependencyException(Exception):
           pass
@@ -833,10 +834,10 @@ class ProtoGen:
 
         raise DependencyException(f"Foreign key error - table \"{predecessor}\" must come before table \"{module}\" in {self.model_path}")
 
-    with open("database/schema/schema.txt","w") as f:
+    with open(os.path.join(here,"../database/schema/schema.txt"),"w") as f:
       f.write(translate_diagram(
-        [os.path.join(os.path.dirname(__file__), f"database/schema/{file}") \
-         for file in os.listdir("database/schema/")]))
+        [os.path.join(here, f"../database/schema/{file}") \
+         for file in os.listdir(os.path.join(here,"../database/schema/"))]))
 
     #endregion
 
@@ -844,8 +845,10 @@ class ProtoGen:
 
     gen = ((direct, subdir, module) for direct in dirs for subdir in subdirs for module in self.modules)
     for i, (direct, subdir, module) in enumerate(gen):
-      with open(f"{direct}/{subdir}/{"test_" if subdir == "tests" else ""}"\
-                f"{module}{"_api" if subdir == "tests" and direct == "api" else ""}.py","w") as f:
+      with open(os.path.join(here,"../",
+                f"{direct}/{subdir}/{"test_" if subdir == "tests" else ""}"\
+                f"{module}{"_api" if subdir == "tests" and direct == "api" else ""}.py"),"w") \
+          as f:
 
         # Write headers
         f.write(headers.get(direct,lambda x,y:"")(module,self))
@@ -884,7 +887,7 @@ class ProtoGen:
 
     #region Frontend
     
-    with open("frontend/src/components/Modules.jsx","w") as f:
+    with open(os.path.join(here,"../frontend/src/components/Modules.jsx"),"w") as f:
       f.write("import { MyTable } from './MyTable';\n\n")
 
       for module, obj in self.modules.items():
@@ -938,7 +941,7 @@ class ProtoGen:
 
     #region Conftests
 
-    with open(f"database/tests/conftest.py","w") as f:
+    with open(os.path.join(here,f"../database/tests/conftest.py"),"w") as f:
       f.write(headers["conftest"](module,self))
       # Reset database function
       f.write(
@@ -977,14 +980,14 @@ class ProtoGen:
           f"\treturn create_{module}(new_{singular})\n\n"
         )
 
-    with open("api/tests/conftest.py","w") as f:
+    with open(os.path.join(here,"../api/tests/conftest.py"),"w") as f:
       f.write("from database.tests.conftest import *\n\n")
 
     #endregion
     
     #region Server
 
-    with open("api/server.py", "w") as f:
+    with open(os.path.join(here,"../api/server.py"), "w") as f:
       f.write(headers["server"](module,self))
 
       for module in self.modules:
@@ -1022,7 +1025,7 @@ class ProtoGen:
         "@app.errorhandler(Exception)\n"\
         "def internal_server_error(e):\n"\
         "\tprint(e)\n"\
-        "\treturn jsonify(error=\"Something went wrong\"), 500\n"\
+        "\treturn jsonify(error=\"Something went wrong\"), 500\n\n"\
         "@app.route('/')\n"\
         "def hello_world():\n"\
         "\treturn 'Hello world!'\n\n"\
@@ -1037,7 +1040,7 @@ class ProtoGen:
 
       for file, obj in custom.items():
         os.makedirs(file[:file.rfind('/')],exist_ok=True)
-        with open(file, obj["mode"]) as f:
+        with open(os.path.join(here,f"../{file}"), obj["mode"]) as f:
           for body in obj["body"](self.modules):
             f.write(body)
 
@@ -1045,8 +1048,8 @@ class ProtoGen:
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
-  parser.add_argument("--file","-f",default="models.json",help="Input models file")
+  parser.add_argument("--file","-f",default="protogen/models.json",help="Input models file")
   args = parser.parse_args()
 
-  stubber = ProtoGen(args.file)
+  stubber = ProtoGen(os.path.join(here,"../",args.file))
   stubber.main()  

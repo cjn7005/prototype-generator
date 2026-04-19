@@ -1,8 +1,13 @@
+import argparse
 import json
 import os
 import subprocess
 
 from database.src import db_utils
+
+HERE = os.path.dirname(__file__)
+
+IGNORED_FILES = ["db_utils.py","test_utils.py",".ignoreme"]
 
 def remove(file_path, rf = False):
     """
@@ -24,10 +29,10 @@ def remove(file_path, rf = False):
             subprocess.run(["del",file_path.replace("/","\\")],shell=True)
 
 
-def main():
+def main(model_path: str):
     dirs = ["api","database"]
     subdirs = ["src","tests"]
-    with open("models.json","r") as f:
+    with open(model_path,"r") as f:
         modules = json.load(f)
 
     # SQL tables
@@ -40,29 +45,33 @@ def main():
     # DB + API
     gen = ((direct, subdir) for direct in dirs for subdir in subdirs)
     for (direct, subdir) in gen:
-        for file in os.listdir(f"{direct}/{subdir}"):
-            if file in ["db_utils.py","test_utils.py",".ignoreme"]: continue
-            full_path = os.path.join(os.path.dirname(__file__), f'{direct}/{subdir}/{file}')
+        for file in os.listdir(os.path.join(HERE,f"../{direct}/{subdir}")):
+            if file in IGNORED_FILES: continue
+            full_path = os.path.join(HERE, f'../{direct}/{subdir}/{file}')
             if file == "__pycache__": remove(full_path, True)
             else: remove(full_path)
     
     # Schema files
     for file in os.listdir(f"database/schema"):
         if file == ".ignoreme": continue
-        full_path = os.path.join(os.path.dirname(__file__), f'database/schema/{file}')
+        full_path = os.path.join(HERE, f'../database/schema/{file}')
         remove(full_path)
 
     # Server
-    full_path = os.path.join(os.path.dirname(__file__), 'api/server.py')
+    full_path = os.path.join(HERE, '../api/server.py')
     remove(full_path)
 
     # Frontend modules
-    full_path = os.path.join(os.path.dirname(__file__), 'frontend/src/components/Modules.jsx')
+    full_path = os.path.join(HERE, '../frontend/src/components/Modules.jsx')
     remove(full_path)
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--file","-f",default="protogen/models.json",help="Input models file")
+    args = parser.parse_args()
+
     print("Are you sure you want to delete all files in database/ and api/ (y/n)?")
     put = input()
     if put == "y":
-        main()
+        main(os.path.join(HERE,"../",args.file))
