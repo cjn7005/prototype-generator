@@ -30,7 +30,7 @@ export function MyForm({isActive, onClosed, header, fields, obj, field_names, pk
     }
     setFormData(formCopy);
 
-    onSubmit(formData, objPK); 
+    onSubmit(formCopy, objPK); 
     setIsOpen(false);
   }
 

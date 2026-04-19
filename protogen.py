@@ -498,7 +498,9 @@ class ProtoGen:
     put += \
       "\t\"\"\"\n"\
      f"\tif not db.get_{module}("+"{"+f"\"{self.get_pk(module)}\":{self.get_pk(module)}"+"}):\n"\
-     f"\t\tabort404({self.get_pk(module)})\n\n"\
+     f"\t\tabort404({self.get_pk(module)})\n"\
+      "\tif not request.args:\n"\
+      "\t\treturn jsonify(\"\"), 204\n\n"\
      f"\tresult = db.update_{module}({pk}, dict(request.args))\n"\
       "\treturn jsonify(result.__dict__), 200\n\n"
     

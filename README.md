@@ -1,6 +1,7 @@
 # Prototype Generator (ProtoGen)
 
-Prototype Generator (or ProtoGen for short) is a tool for getting started creating a backend for a web application. It generates basic CRUD SQL queries, APIs, and frontend interface based on your proposed backend schema. 
+
+Prototype Generator (or ProtoGen for short) is a tool for getting started creating your own web application. It generates basic CRUD SQL queries, APIs, and frontend interface based on your proposed backend schema. 
 
 ## Setup
 

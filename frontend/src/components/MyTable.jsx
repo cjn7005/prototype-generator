@@ -33,7 +33,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
         let bdy = await response.json();
         let txt = bdy.error ? bdy.error : bdy;
         let msg = ("Failed to get required fields for "+table_name[1] + 
-                    (response ? (" – "+(txt)) : ""));
+                    (response ? (" \u{2013} "+(txt)) : ""));
         setLastResponse( { "text": msg, "ok": ok });
       }
     }
@@ -61,7 +61,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
         let txt = bdy?.error ? bdy.error : bdy;
         console.log(txt);
         let msg = ("Failed to get "+table_name[1] + 
-                    (response ? (" – "+(txt)) : ""));
+                    (response ? (" \u{2013} "+(txt)) : ""));
         setLastResponse( { "text": msg, "ok": ok });
       }
     }
@@ -85,7 +85,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       
       let msg = ok ? ("Successfully created "+table_name[0]) : 
                      ("Failed to create "+table_name[0] + 
-                      (response ? (" – "+(txt)) : ""));
+                      (response ? (" \u{2013} "+(txt)) : ""));
       setLastResponse( { "text": msg, "ok": ok });
       getData();
     }
@@ -104,14 +104,18 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       console.error(error);
     }
     finally {
-      let ok = response && response.ok;
-      let bdy = await response.json();
-      let txt = bdy?.error ? bdy.error : bdy;
+      if (response.status !== 204) {
+        let ok = response && response.ok;
+        let bdy = await response.json();
+        let txt = bdy?.error ? bdy.error : bdy;
 
-      let msg = ok ? ("Successfully updated "+table_name[0]+" "+selectedObject[pk]) : 
-                     ("Failed to update "+table_name[0]+" "+selectedObject[pk] + 
-                      (response ? (" – "+(txt)) : ""));
-      setLastResponse( { "text": msg, "ok": ok });
+        let msg = ok ? ("Successfully updated "+table_name[0]+" "+selectedObject[pk]) : 
+                      ("Failed to update "+table_name[0]+" "+selectedObject[pk] + 
+                        (response ? (" \u{2013} "+(txt)) : ""));
+        setLastResponse( { "text": msg, "ok": ok });
+      } else {
+        setLastResponse( {"text": "", "ok": true});
+      }
       getData();
     }
   }
@@ -133,7 +137,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
 
       let msg = ok ? ("Successfully deleted "+table_name[0]+" "+selectedObject[pk]) : 
                      ("Failed to delete "+table_name[0]+" "+selectedObject[pk] + 
-                        (response ? (" – "+(txt)) : ""));
+                        (response ? (" \u{2013} "+(txt)) : ""));
       setLastResponse( { "text": msg, "ok": ok });
       getData();
     }
@@ -178,7 +182,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
           </ModalFooter>
       </Modal>
 
-
+      {/* Table */}
       <Table hover striped>
         <thead>
           <tr>
