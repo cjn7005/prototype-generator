@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Alert, Button, Modal, ModalFooter, ModalHeader, Table } from 'reactstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useEffect, useState } from 'react';
@@ -5,6 +6,14 @@ import { MyForm } from '../components/MyForm';
 
 
 export function MyTable({table_name, url, columns, column_names, pk}) {
+  MyTable.propTypes = {
+    table_name: PropTypes.string.isRequired,
+    url: PropTypes.string.isRequired,
+    columns: PropTypes.array.isRequired,
+    column_names: PropTypes.array.isRequired,
+    pk: PropTypes.string.isRequired
+  }
+
   const [state, setState] = useState("loading");
   const [data, setData] = useState([]);
   const [selectedObject, setSelectedObject] = useState(null);
@@ -28,7 +37,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       console.error(error);
     }
     finally {
-      let ok = response && response.ok;
+      let ok = response?.ok;
       if (!ok) {
         let bdy = await response.json();
         let txt = bdy.error ? bdy.error : bdy;
@@ -55,7 +64,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       console.error(error);
     }
     finally {
-      let ok = response && response.ok;
+      let ok = response?.ok;
       if (!ok) {
         let bdy = await response.json();
         let txt = bdy?.error ? bdy.error : bdy;
@@ -79,13 +88,19 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       console.error(error);
     }
     finally {
-      let ok = response && response.ok;
+      let ok = response?.ok;
       let bdy = await response.json();
       let txt = bdy?.error ? bdy.error : bdy;
       
-      let msg = ok ? ("Successfully created "+table_name[0]) : 
-                     ("Failed to create "+table_name[0] + 
-                      (response ? (" \u{2013} "+(txt)) : ""));
+      let msg;
+      if (ok) {
+        msg = ("Successfully created "+table_name[0])
+      } else {
+        msg = "Failed to create "+table_name[0];
+        if (txt) {
+          msg += " \u{2013} "+(txt);
+        }
+      }
       setLastResponse( { "text": msg, "ok": ok });
       getData();
     }
@@ -104,17 +119,23 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       console.error(error);
     }
     finally {
-      if (response.status !== 204) {
-        let ok = response && response.ok;
+      if (response.status === 204) {
+        setLastResponse( {"text": "", "ok": true});
+      } else {
+        let ok = response?.ok;
         let bdy = await response.json();
         let txt = bdy?.error ? bdy.error : bdy;
 
-        let msg = ok ? ("Successfully updated "+table_name[0]+" "+selectedObject[pk]) : 
-                      ("Failed to update "+table_name[0]+" "+selectedObject[pk] + 
-                        (response ? (" \u{2013} "+(txt)) : ""));
+        let msg;
+        if (ok) {
+          msg = ("Successfully updated "+table_name[0]+" "+selectedObject[pk]);
+        } else {
+          msg = "Failed to update "+table_name[0]+" "+selectedObject[pk];
+          if (txt) {
+            msg += " \u{2013} "+(txt);
+          }
+        }
         setLastResponse( { "text": msg, "ok": ok });
-      } else {
-        setLastResponse( {"text": "", "ok": true});
       }
       getData();
     }
@@ -131,20 +152,33 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       console.error(error);
     }
     finally {
-      let ok = response && response.ok;
+      let ok = response?.ok;
       let bdy = await response.json();
       let txt = bdy?.error ? bdy.error : bdy;
 
-      let msg = ok ? ("Successfully deleted "+table_name[0]+" "+selectedObject[pk]) : 
-                     ("Failed to delete "+table_name[0]+" "+selectedObject[pk] + 
-                        (response ? (" \u{2013} "+(txt)) : ""));
+      let msg;
+      if (ok) {
+        msg = ("Successfully deleted "+table_name[0]+" "+selectedObject[pk]);
+      } else {
+        msg = "Failed to delete "+table_name[0]+" "+selectedObject[pk];
+        if (txt) {
+          msg += " \u{2013} "+(txt);
+        }
+      }
       setLastResponse( { "text": msg, "ok": ok });
       getData();
     }
   }
 
-  // eslint-disable-next-line
-  useEffect(() => getData, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {getData()}, []);
+
+  let modalHeader;
+  if (posting) {
+    modalHeader = "Create a new " + table_name[0];
+  } else {
+   modalHeader = "Edit "+table_name[0]+" "+(selectedObject?selectedObject[pk]:"NULL");
+  }
 
 
   if (state !== "loading") {
@@ -162,8 +196,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       <MyForm 
         isActive={(posting || selectedObject) && !deleting} 
         onClosed={() => {setSelectedObject(null); setPosting(false);}} 
-        header={posting ? "Create a new " + table_name[0] : 
-                  "Edit "+table_name[0]+" "+(selectedObject?selectedObject[pk]:"NULL")} 
+        header={modalHeader} 
         fields={columns} 
         obj={selectedObject} 
         field_names={column_names}
@@ -208,9 +241,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
     </>);
 
   } else if (state === "loading") {
-    return <>
-      <h1>Loading...</h1>
-    </>
+    return <h1>Loading...</h1>
 
   } else if (state === "error") {
     return <>

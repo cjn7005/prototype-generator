@@ -155,7 +155,7 @@ class ProtoGen:
     return self.modules[module]["attributes"][pk]
 
 
-  def write_methods(self, module: str, method: callable, label: str) -> None:
+  def write_methods(self, module: str, method: callable, label: str) -> str:
     """Returns the written out methods wrapped in a `region` tag with `label`"""
     result = (f"#region {label}\n\n")
     for function in method(module):
