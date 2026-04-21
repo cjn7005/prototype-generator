@@ -16,7 +16,7 @@ def translate_diagram(files: list[str]):
         with open(file, "r") as f:
             while line := f.readline():
                 line = re.sub(r"CREATE TABLE( IF NOT EXISTS)?","TABLE",line,flags=re.IGNORECASE)
-                line = ''.join(map(lambda x: x.rstrip(), line.split(',')))
+                line = ''.join(x.rstrip() for x in line.split(','))
                 line = re.sub(r"\(\s*$","{\n",line,flags=re.IGNORECASE)
                 line = re.sub(r"^\)","}",line,flags=re.IGNORECASE)
                 line = re.sub(r"^\s+(?P<col>\w+)\s+(?P<type>[\w\(\)]+)\s*(?P<args>.*)\s*",r"\t\1\t\2\t[\3]\n",line,flags=re.IGNORECASE)
