@@ -1,4 +1,4 @@
-name: Deploy Node.js Webpage
+name: Run Generated Tests
 
 on:
   push:
