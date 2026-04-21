@@ -1,5 +1,5 @@
 # Prototype Generator (ProtoGen)
-
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=cjn7005_prototype-generator&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=cjn7005_prototype-generator)
 
 Prototype Generator (or ProtoGen for short) is a tool for getting started creating your own web application. It generates basic CRUD SQL queries, APIs, and frontend interface based on your proposed backend schema. 
 
