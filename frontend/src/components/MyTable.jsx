@@ -13,7 +13,6 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
     column_names: PropTypes.array.isRequired,
     pk: PropTypes.string.isRequired
   }
-  console.log(columns);
 
   const [state, setState] = useState("loading");
   const [data, setData] = useState([]);
