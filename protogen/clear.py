@@ -22,7 +22,7 @@ def remove(file_path, rf = False):
             subprocess.run(["rm","-rf",file_path])
         else:
             subprocess.run(["rm",file_path])
-    except: # Windows
+    except Exception: # Windows
         if rf:
             subprocess.run(["rd","/s","/q",file_path.replace("/","\\")],shell=True)
         else:
@@ -47,12 +47,12 @@ def main(model_path: str):
     for (direct, subdir) in gen:
         for file in os.listdir(os.path.join(HERE,f"../{direct}/{subdir}")):
             if file in IGNORED_FILES: continue
+            
             full_path = os.path.join(HERE, f'../{direct}/{subdir}/{file}')
-            if file == "__pycache__": remove(full_path, True)
-            else: remove(full_path)
+            remove(full_path, file == "__pycache__")
     
     # Schema files
-    for file in os.listdir(f"database/schema"):
+    for file in os.listdir("database/schema"):
         if file == ".ignoreme": continue
         full_path = os.path.join(HERE, f'../database/schema/{file}')
         remove(full_path)
