@@ -211,21 +211,21 @@ class ProtoGen:
     [ADD HERE]
     """
     singular = self.get_singular(module)
-    object = self.get_object_name(module)
+    object_name = self.get_object_name(module)
 
     get_all = \
-     f"def get_all_{module}() -> list[{object}]:\n"\
+     f"def get_all_{module}() -> list[{object_name}]:\n"\
       "\t\"\"\"\n"\
      f"\tReturns all {module} in the database\n\n"\
       "\tReturns:\n"\
-     f"\t\tlist[{object}]: all {module} in the database\n"\
+     f"\t\tlist[{object_name}]: all {module} in the database\n"\
       "\t\"\"\"\n"\
      f"\tsql = \"SELECT * FROM {module};\"\n\n"\
       "\tresult = exec_get_all(sql)\n\n"\
-     f"\treturn [{object}(row) for row in result]\n\n"
+     f"\treturn [{object_name}(row) for row in result]\n\n"
     
     queried = \
-     f"def get_{module}(kwargs) -> list[{object}]:\n"\
+     f"def get_{module}(kwargs) -> list[{object_name}]:\n"\
       "\t\"\"\"\n"\
      f"\tReturns {module} with matching attributes\n\n"\
       "\t## Kwargs:\n"
@@ -237,7 +237,7 @@ class ProtoGen:
 
     queried += \
       "\n\tReturns:\n"\
-     f"\t\tlist[{object}]: all {module} in the database\n"\
+     f"\t\tlist[{object_name}]: all {module} in the database\n"\
       "\t\"\"\"\n"\
      f"\tif not kwargs: return get_all_{module}()\n"\
      f"\tsql = \"SELECT * FROM {module} WHERE\\n\"\n"\
@@ -245,7 +245,7 @@ class ProtoGen:
       "\t\tsql += f\"\\t{key} = %({key})s\"\n"\
       "\t\tsql += \",\\n\" if i < len(kwargs)-1 else \"\\n\"\n\n"\
       "\tresult = exec_get_all(sql,kwargs)\n\n"\
-     f"\treturn [{object}(row) for row in result]\n\n"
+     f"\treturn [{object_name}(row) for row in result]\n\n"
 
     return get_all, queried
     
@@ -257,10 +257,10 @@ class ProtoGen:
     [ADD HERE]
     """
     singular = self.get_singular(module)
-    object = self.get_object_name(module)
+    object_name = self.get_object_name(module)
 
     create = \
-     f"def create_{module}(kwargs) -> {object}:\n"\
+     f"def create_{module}(kwargs) -> {object_name}:\n"\
       "\t\"\"\"\n"\
      f"\tCreates and returns a {singular}\n\n"\
       "\t## Kwargs:\n"
@@ -273,7 +273,7 @@ class ProtoGen:
 
     create += \
       "\n\tReturns:\n"\
-     f"\t\t{object}: the created {singular}\n"\
+     f"\t\t{object_name}: the created {singular}\n"\
       "\t\"\"\"\n"\
       "\tif len(kwargs) == 0: return None\n"\
      f"\tsql = \"INSERT INTO {module} (\"\n"\
@@ -286,7 +286,7 @@ class ProtoGen:
       "\tsql += values\n"\
       "\tsql += \"\\nRETURNING *\"\n\n"\
       "\tresult = exec_commit_returning(sql,kwargs)[0]\n\n"\
-     f"\treturn {object}(result)\n\n"
+     f"\treturn {object_name}(result)\n\n"
     
     return create,
 
@@ -300,10 +300,10 @@ class ProtoGen:
     pk = self.get_pk(module)
     pk_type = self.get_pk_arguments(module)["python_type"]
     singular = self.get_singular(module)
-    object = self.get_object_name(module)
+    object_name = self.get_object_name(module)
     
     update = \
-     f"def update_{module}({pk}: {pk_type}, kwargs) -> {object}:\n"\
+     f"def update_{module}({pk}: {pk_type}, kwargs) -> {object_name}:\n"\
       "\t\"\"\"\n"\
      f"\tUpdates and returns a {singular} from its {pk}\n\n"\
       "\tArgs:\n"\
@@ -317,7 +317,7 @@ class ProtoGen:
 
     update += \
       "\n\tReturns:\n"\
-     f"\t\t{object}: the updated {singular}\n"\
+     f"\t\t{object_name}: the updated {singular}\n"\
       "\t\"\"\"\n"\
       "\tkwargs = dict(kwargs)\n"\
       "\tif len(kwargs) == 0: return\n"\
@@ -329,7 +329,7 @@ class ProtoGen:
       "\tsql += \"RETURNING *\"\n\n"\
      f"\tkwargs[\"{pk}\"] = {pk}\n"\
       "\tresult = exec_commit_returning(sql,kwargs)[0]\n"\
-     f"\treturn {object}(result)\n\n"\
+     f"\treturn {object_name}(result)\n\n"\
     
     return update,
 
@@ -343,20 +343,20 @@ class ProtoGen:
     pk = self.get_pk(module)
     pk_type = self.get_pk_arguments(module)["python_type"]
     singular = self.get_singular(module)
-    object = self.get_object_name(module)
+    object_name = self.get_object_name(module)
 
     delete = \
-     f"def delete_{module}({pk}: {pk_type}) -> {object}:\n"\
+     f"def delete_{module}({pk}: {pk_type}) -> {object_name}:\n"\
       "\t\"\"\"\n"\
      f"\tDeletes a {singular} from its {pk}\n\n"\
       "\tArgs:\n"\
      f"\t\t{pk} ({pk_type}): the {singular} to delete\n\n"\
       "\tReturns:\n"\
-     f"\t\t{object}: the deleted {singular}\n"\
+     f"\t\t{object_name}: the deleted {singular}\n"\
       "\t\"\"\"\n"\
      f"\tsql = \"DELETE FROM {module} WHERE {pk} = %({pk})s RETURNING * \"\n"\
       "\tresult = exec_commit_returning(sql,{"+f"\"{pk}\": {pk}"+"})[0]\n"\
-     f"\treturn {object}(result)\n\n"
+     f"\treturn {object_name}(result)\n\n"
 
     return delete,
 
@@ -403,7 +403,7 @@ class ProtoGen:
     pk = self.get_pk(module)
     pk_type = self.get_pk_arguments(module)["python_type"]
     singular = self.get_singular(module)
-    object = self.get_object_name(module)
+    object_name = self.get_object_name(module)
 
     from_pk = \
      f"@{module}_bp.route('/<{pk}>', methods=[\"GET\"])\n"\
@@ -432,7 +432,7 @@ class ProtoGen:
 
     queried += \
       "\n\tReturns:\n"\
-     f"\t\tlist[{object}]: all {module} in the database\n"\
+     f"\t\tlist[{object_name}]: all {module} in the database\n"\
       "\t\"\"\"\n"\
      f"\tresult = db.get_{module}(request.args)\n"\
       "\treturn jsonify([row.__dict__ for row in result]), 200\n\n"
@@ -588,7 +588,7 @@ class ProtoGen:
     [ADD HERE]
     """
     singular = self.get_singular(module)
-    object = self.get_object_name(module)
+    object_name = self.get_object_name(module)
     parameters, _ = self.get_dependencies(module)
 
     result = \
@@ -601,7 +601,7 @@ class ProtoGen:
     result += \
       "\t}\n\n"\
     f"\tresult = db.create_{module}(new_{singular})\n\n"\
-    f"\texpected = {object}(exec_get_one(\"SELECT * FROM {module}\"))\n\n"\
+    f"\texpected = {object_name}(exec_get_one(\"SELECT * FROM {module}\"))\n\n"\
     f"\tassert expected == result, \"Failed to create {singular}\"\n\n"
     
     return result,
@@ -614,7 +614,7 @@ class ProtoGen:
     [ADD HERE]
     """
     singular = self.get_singular(module)
-    object = self.get_object_name(module)
+    object_name = self.get_object_name(module)
     pk = self.get_pk(module)
 
     return \
@@ -622,9 +622,9 @@ class ProtoGen:
       "\t# Can\'t actually test update without prompting a second sample value\n"\
       "\t# May be a future feature but for now just edit these tests manually\n"\
       "\t# (It still tests that it can be called, so that\'s something)\n"\
-     f"\texpected = {object}(exec_get_one(\"SELECT * FROM {module}\"))\n\n"\
+     f"\texpected = {object_name}(exec_get_one(\"SELECT * FROM {module}\"))\n\n"\
      f"\tdb.update_{module}(one_{singular}.{pk}, one_{singular}.__dict__)\n"\
-     f"\tresult = {object}(exec_get_one(\"SELECT * FROM {module}\"))\n\n"\
+     f"\tresult = {object_name}(exec_get_one(\"SELECT * FROM {module}\"))\n\n"\
      f"\tassert expected == result, \"Failed to update {singular}\"\n\n",
 
 
@@ -790,10 +790,10 @@ class ProtoGen:
 
       for module in self.modules:
         singular = self.get_singular(module)
-        object = self.get_object_name(module)
+        object_name = self.get_object_name(module)
         attrs = self.modules[module]["attributes"]
 
-        f.write(f"class {object}:\n")
+        f.write(f"class {object_name}:\n")
         for attr, obj in attrs.items():
           f.write(f"\t{attr}: {obj["python_type"]}\n")
 
@@ -802,7 +802,7 @@ class ProtoGen:
           f.write(f"\t\tself.{attr} = args[{i}]\n")
 
         f.write("\n\tdef __eq__(self, other):\n"\
-              f"\t\tif type(other) != {object}: return False\n"
+              f"\t\tif type(other) != {object_name}: return False\n"
                 "\t\treturn (\n")
         for i,attr in enumerate(attrs):
           f.write(f"\t\t\tself.{attr} == other.{attr}{" and" if i < len(attrs)-1 else ""}\n")
