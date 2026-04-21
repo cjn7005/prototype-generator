@@ -898,7 +898,7 @@ class ProtoGen:
           "\treturn <MyTable \n"\
           "\t\ttable_name={"+f"[\"{pretty_name(self.get_singular(module))}\",\"{pretty_name(module)}\"]"+"}\n"\
           "\t\turl={"+f"\"{api_host}/{module}/\""+"}\n"\
-          "\t\tcolumns={"+f"{obj["attributes"]}"+"}\n"\
+          "\t\tcolumns={"+f"{list(obj["attributes"].keys())}"+"}\n"\
           "\t\tcolumn_names={"+f"{
             [ pretty_name(attr) for attr in obj["attributes"] ]
           }"+"}\n"\
