@@ -93,7 +93,8 @@ To generate the code, first you must define your backend schema. To do this, you
 
 Once your models are defined, simply run ProtoGen:
 
-> [!NOTE] `model_file` should be relative to the root directory.
+> [!NOTE] 
+> `model_file` should be relative to the root directory.
 
 ```zsh
 python -m protogen.protogen [-f model_file]
