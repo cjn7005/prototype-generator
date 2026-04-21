@@ -1,8 +1,21 @@
+import PropTypes from 'prop-types';
 import { Modal, ModalBody, ModalHeader, ModalFooter, Button, Form, FormGroup, Input, Label } from 'reactstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useEffect, useState } from 'react';
 
 export function MyForm({isActive, onClosed, header, fields, obj, field_names, pk, onSubmit, required}) {
+  MyForm.propTypes = {
+    isActive: PropTypes.bool.isRequired,
+    onClosed: PropTypes.func.isRequired,
+    header: PropTypes.string.isRequired,
+    fields: PropTypes.array.isRequired,
+    obj: PropTypes.object,
+    field_names: PropTypes.array.isRequired,
+    pk: PropTypes.string.isRequired,
+    onSubmit: PropTypes.func.isRequired,
+    required: PropTypes.array
+  }
+
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({});
   const [objPK, setObjPK] = useState(obj ? obj[pk] : null);
@@ -43,10 +56,10 @@ export function MyForm({isActive, onClosed, header, fields, obj, field_names, pk
       <ModalBody>
         {fields.map((k,i) => (
           <FormGroup key={"formGroup"+i}>
-            <Label aria-required={required && (required.includes(k))} for={k}>
-              {field_names[i]}{(required && (required.includes(k))) ? <span className="text-danger"> *</span> : ""}
+            <Label aria-required={required?.includes(k)} for={k}>
+              {field_names[i]}{required?.includes(k) ? <span className="text-danger"> *</span> : ""}
             </Label>
-            <Input required={required && (required.includes(k))} name={k} defaultValue={obj ? obj[k] : ""} onChange={(e) => handleChange(e)}/>
+            <Input required={required?.includes(k)} name={k} defaultValue={obj ? obj[k] : ""} onChange={(e) => handleChange(e)}/>
           </FormGroup>
         ))}
       </ModalBody>

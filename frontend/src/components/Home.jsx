@@ -1,7 +1,12 @@
+import PropTypes from 'prop-types';
 import { Card, ListGroup, ListGroupItem, NavLink } from "reactstrap";
 
 export function Home({ tables, table_names }) {
-  return <>
+  Home.propTypes = {
+    tables: PropTypes.array.isRequired,
+    table_names: PropTypes.array.isRequired
+  };
+  return (
     <Card>
       <ListGroup>
         {table_names.map((x,i) => (
@@ -11,5 +16,5 @@ export function Home({ tables, table_names }) {
         ))}
       </ListGroup>
     </Card>
-  </>
+  )
 }
