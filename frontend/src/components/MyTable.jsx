@@ -106,6 +106,23 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
     }
   }
 
+  const setLastResponsePutDelete = async (response, isDelete) => {
+    let ok = response?.ok;
+    let bdy = await response.json();
+    let txt = bdy?.error ? bdy.error : bdy;
+
+    let msg;
+    if (ok) {
+      msg = (`Successfully ${isDelete ? "deleted" : "updated"} `+table_name[0]+" "+selectedObject[pk]);
+    } else {
+      msg = `Failed to ${isDelete ? "delete" : "update"} `+table_name[0]+" "+selectedObject[pk];
+      if (txt) {
+        msg += " \u{2013} "+(txt);
+      }
+    }
+    setLastResponse( { "text": msg, "ok": ok });
+  }
+
   async function putData(obj, objPK) {
     let response;
     try {
@@ -122,20 +139,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       if (response.status === 204) {
         setLastResponse( {"text": "", "ok": true});
       } else {
-        let ok = response?.ok;
-        let bdy = await response.json();
-        let txt = bdy?.error ? bdy.error : bdy;
-
-        let msg;
-        if (ok) {
-          msg = ("Successfully updated "+table_name[0]+" "+selectedObject[pk]);
-        } else {
-          msg = "Failed to update "+table_name[0]+" "+selectedObject[pk];
-          if (txt) {
-            msg += " \u{2013} "+(txt);
-          }
-        }
-        setLastResponse( { "text": msg, "ok": ok });
+        setLastResponsePutDelete(response, false);
       }
       getData();
     }
@@ -152,20 +156,7 @@ export function MyTable({table_name, url, columns, column_names, pk}) {
       console.error(error);
     }
     finally {
-      let ok = response?.ok;
-      let bdy = await response.json();
-      let txt = bdy?.error ? bdy.error : bdy;
-
-      let msg;
-      if (ok) {
-        msg = ("Successfully deleted "+table_name[0]+" "+selectedObject[pk]);
-      } else {
-        msg = "Failed to delete "+table_name[0]+" "+selectedObject[pk];
-        if (txt) {
-          msg += " \u{2013} "+(txt);
-        }
-      }
-      setLastResponse( { "text": msg, "ok": ok });
+      setLastResponsePutDelete(response, true);
       getData();
     }
   }
